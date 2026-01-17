@@ -3,13 +3,15 @@ import { useAuth } from "../hooks/use-auth";
 import { format, getISOWeek, startOfISOWeek, parseISO } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft, Hash, CheckSquare, List } from "lucide-react";
+import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft, Hash, CheckSquare, List, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { storage } from "@/lib/storage";
+import { usePlans } from "@/hooks/use-plans";
 import { useState, useEffect } from "react";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Plan } from "@/lib/types";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { CalendarDayButton } from "@/components/ui/calendar";
 
 // Extracted Outline Item Component
 const OutlineItem = ({ 
@@ -41,6 +43,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
   
   // Sidebar State
   const [isLeftOpen, setIsLeftOpen] = useState(() => {
@@ -66,11 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     daily: true
   });
 
-  const { data: plans = [] } = useQuery({
-    queryKey: ['plans', user?.id],
-    queryFn: () => user ? storage.getAllPlans(user.id) : [],
-    enabled: !!user
-  });
+  const { getAllPlans, deletePlan } = usePlans();
+  const { data: plans = [] } = getAllPlans();
 
   // Current Plan Data for Outline
   const pathParts = location.split('/');
@@ -199,12 +200,65 @@ export function Layout({ children }: { children: React.ReactNode }) {
     setOpen(false);
   };
 
+  const confirmDelete = (plan: Plan) => {
+    setPlanToDelete(plan);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!planToDelete) return;
+
+    deletePlan.mutate(planToDelete.id, {
+        onSuccess: () => {
+            // If the deleted plan is the one currently open, redirect to today
+            if (activePlan && activePlan.id === planToDelete.id) {
+                const today = format(new Date(), "yyyy-MM-dd");
+                setLocation(`/day/${today}`);
+            }
+            setDeleteDialogOpen(false);
+            setPlanToDelete(null);
+        }
+    });
+  };
+
   // Group plans for sidebar
   const groupedPlans = {
     yearly: plans.filter(p => p.type === 'year').sort((a,b) => b.date.localeCompare(a.date)),
     monthly: plans.filter(p => p.type === 'month').sort((a,b) => b.date.localeCompare(a.date)),
     weekly: plans.filter(p => p.type === 'week').sort((a,b) => b.date.localeCompare(a.date)),
     daily: plans.filter(p => p.type === 'day').sort((a,b) => b.date.localeCompare(a.date))
+  };
+
+  // Custom Day Button for Calendar Context Menu
+  const ContextMenuDayButton = (props: any) => {
+    const { day } = props;
+    const dateStr = format(day.date, "yyyy-MM-dd");
+    const plan = plans.find(p => p.type === 'day' && p.date === dateStr);
+    
+    // We wrap CalendarDayButton
+    const button = <CalendarDayButton {...props} />;
+
+    if (!plan) return button;
+
+    return (
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                {button}
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+                <ContextMenuItem 
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent navigation?
+                        confirmDelete(plan);
+                    }}
+                    className="text-destructive focus:text-destructive"
+                >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Document
+                </ContextMenuItem>
+            </ContextMenuContent>
+        </ContextMenu>
+    );
   };
 
   return (
@@ -267,22 +321,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       {expanded[type] && (
                           <div className="ml-2 pl-2 border-l border-border/40 space-y-0.5">
                               {groupedPlans[type].map(plan => (
-                                  <Link key={plan.id} href={`/${plan.type}/${plan.date}`}>
-                                      <a className={cn(
-                                          "flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors truncate",
-                                          location === `/${plan.type}/${plan.date}` 
-                                              ? "bg-accent text-accent-foreground font-medium" 
-                                              : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-                                      )}>
-                                          <FileText className="w-3.5 h-3.5 opacity-70 flex-shrink-0" />
-                                          <span className="truncate">
-                                            {plan.type === 'day' ? format(parseISO(plan.date), "MMM d") : 
-                                             plan.type === 'week' ? `Week ${format(parseISO(plan.date), "w")}` :
-                                             plan.type === 'month' ? format(parseISO(plan.date), "MMMM") :
-                                             plan.date.substring(0, 4)}
-                                          </span>
-                                      </a>
-                                  </Link>
+                                  <ContextMenu key={plan.id}>
+                                    <ContextMenuTrigger>
+                                        <Link href={`/${plan.type}/${plan.date}`}>
+                                            <a className={cn(
+                                                "flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors truncate",
+                                                location === `/${plan.type}/${plan.date}` 
+                                                    ? "bg-accent text-accent-foreground font-medium" 
+                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                                            )}>
+                                                <FileText className="w-3.5 h-3.5 opacity-70 flex-shrink-0" />
+                                                <span className="truncate">
+                                                  {plan.type === 'day' ? format(parseISO(plan.date), "MMM d") : 
+                                                   plan.type === 'week' ? `Week ${format(parseISO(plan.date), "w")}` :
+                                                   plan.type === 'month' ? format(parseISO(plan.date), "MMMM") :
+                                                   plan.date.substring(0, 4)}
+                                                </span>
+                                            </a>
+                                        </Link>
+                                    </ContextMenuTrigger>
+                                    <ContextMenuContent>
+                                        <ContextMenuItem 
+                                            onClick={() => confirmDelete(plan)}
+                                            className="text-destructive focus:text-destructive"
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
+                                        </ContextMenuItem>
+                                    </ContextMenuContent>
+                                  </ContextMenu>
                               ))}
                               {groupedPlans[type].length === 0 && (
                                   <div className="px-2 py-1 text-xs text-muted-foreground/50 italic pl-6">Empty</div>
@@ -361,6 +428,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 showWeekNumber
                 selected={currentDate}
                 onSelect={(day) => day && handleDayClick(day)}
+                components={{
+                    DayButton: ContextMenuDayButton
+                }}
                 classNames={{
                   root: "w-full",
                   month: "space-y-4",
@@ -437,6 +507,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the plan for <span className="font-medium text-foreground">{planToDelete ? format(parseISO(planToDelete.date), "MMMM d, yyyy") : 'this date'}</span>. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+                Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

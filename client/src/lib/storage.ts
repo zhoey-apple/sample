@@ -130,6 +130,14 @@ class MockStorage {
     this.save();
     return plan;
   }
+
+  async deletePlan(userId: string, planId: string): Promise<void> {
+    const index = this.plans.findIndex(p => p.id === planId && p.userId === userId);
+    if (index !== -1) {
+      this.plans.splice(index, 1);
+      this.save();
+    }
+  }
 }
 
 export const storage = new MockStorage();

@@ -49,12 +49,24 @@ export function usePlans() {
     }
   });
 
+  const deletePlan = useMutation({
+    mutationFn: (planId: string) => {
+      if (!user) throw new Error("No user");
+      return storage.deletePlan(user.id, planId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+    }
+  });
+
   return {
     principles,
     loadingPrinciples,
     updatePrinciples,
     getPlan,
     getAllPlans,
-    updatePlan
+    updatePlan,
+    deletePlan
   };
 }
