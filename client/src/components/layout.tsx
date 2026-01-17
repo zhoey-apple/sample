@@ -12,6 +12,7 @@ import { Plan } from "@/lib/types";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { CalendarDayButton } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Extracted Outline Item Component
 const OutlineItem = ({ 
@@ -37,6 +38,27 @@ const OutlineItem = ({
     <Icon className="w-3 h-3 flex-shrink-0" />
     <span className="truncate">{label}</span>
   </button>
+);
+
+// Helper for Sidebar Icons
+const SidebarIcon = ({ 
+  children, 
+  tooltip, 
+  shortcut 
+}: { 
+  children: React.ReactNode, 
+  tooltip: string, 
+  shortcut?: string 
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      {children}
+    </TooltipTrigger>
+    <TooltipContent side="right" sideOffset={5} className="flex items-center gap-2">
+      <span>{tooltip}</span>
+      {shortcut && <span className="text-muted-foreground opacity-70 text-[10px] bg-background/10 px-1 rounded">{shortcut}</span>}
+    </TooltipContent>
+  </Tooltip>
 );
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -262,6 +284,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="h-screen overflow-hidden bg-background flex font-sans text-foreground">
       
       {/* LEFT SIDEBAR: Navigation & Files */}
@@ -274,43 +297,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-4 flex items-center gap-3 border-b border-border/40 h-14 min-w-64">
            <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold">L</div>
            <span className="font-serif font-semibold tracking-tight">Life Principles</span>
-           <button 
-             onClick={() => setIsLeftOpen(false)}
-             className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
-           >
-             <PanelLeftClose className="w-4 h-4" />
-           </button>
+           <SidebarIcon tooltip="Close Left Sidebar" shortcut="Ctrl + Shift + ←">
+             <button 
+               onClick={() => setIsLeftOpen(false)}
+               className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
+             >
+               <PanelLeftClose className="w-4 h-4" />
+             </button>
+           </SidebarIcon>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6 min-w-64">
            {/* Global Actions */}
            <div className="px-2 space-y-1">
-              <button 
-                  onClick={() => setOpen(true)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
-              >
-                  <Search className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                  <span className="flex-1 text-left">Search</span>
-                  <kbd className="text-[10px] bg-muted/50 px-1 rounded opacity-70">⌘P</kbd>
-              </button>
-              <Link href="/principles">
-                <a className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors w-full group",
-                  location === "/principles" 
-                    ? "bg-primary/10 text-primary font-medium" 
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                )}>
-                  <Book className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                  <span>Principles</span>
-                </a>
-              </Link>
-              <button 
-                  onClick={() => window.dispatchEvent(new Event("open-onboarding"))}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
-              >
-                  <HelpCircle className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                  <span className="flex-1 text-left">Usage Guide</span>
-              </button>
+              <SidebarIcon tooltip="Search / Commands" shortcut="⌘P">
+                <button 
+                    onClick={() => setOpen(true)}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
+                >
+                    <Search className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                    <span className="flex-1 text-left">Search</span>
+                    <kbd className="text-[10px] bg-muted/50 px-1 rounded opacity-70">⌘P</kbd>
+                </button>
+              </SidebarIcon>
+              <SidebarIcon tooltip="View Principles" shortcut="">
+                <Link href="/principles">
+                  <a className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors w-full group",
+                    location === "/principles" 
+                      ? "bg-primary/10 text-primary font-medium" 
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  )}>
+                    <Book className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                    <span>Principles</span>
+                  </a>
+                </Link>
+              </SidebarIcon>
+              <SidebarIcon tooltip="Open Onboarding Guide" shortcut="">
+                <button 
+                    onClick={() => window.dispatchEvent(new Event("open-onboarding"))}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
+                >
+                    <HelpCircle className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                    <span className="flex-1 text-left">Usage Guide</span>
+                </button>
+              </SidebarIcon>
            </div>
 
            {/* Folder Tree */}
@@ -385,24 +416,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Collapse Toggles (Visible when sidebars closed) */}
         <div className="absolute top-4 left-4 z-10">
            {!isLeftOpen && (
-             <button 
-               onClick={() => setIsLeftOpen(true)}
-               className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-               title="Expand Left Sidebar (Shift+Ctrl+Left)"
-             >
-               <PanelLeftOpen className="w-4 h-4" />
-             </button>
+             <SidebarIcon tooltip="Open Left Sidebar" shortcut="Ctrl + Shift + ←">
+               <button 
+                 onClick={() => setIsLeftOpen(true)}
+                 className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+               >
+                 <PanelLeftOpen className="w-4 h-4" />
+               </button>
+             </SidebarIcon>
            )}
         </div>
         <div className="absolute top-4 right-4 z-10">
            {!isRightOpen && (
-             <button 
-               onClick={() => setIsRightOpen(true)}
-               className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-               title="Expand Right Sidebar (Shift+Ctrl+Right)"
-             >
-               <PanelRightOpen className="w-4 h-4" />
-             </button>
+             <SidebarIcon tooltip="Open Right Sidebar" shortcut="Ctrl + Shift + →">
+               <button 
+                 onClick={() => setIsRightOpen(true)}
+                 className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+               >
+                 <PanelRightOpen className="w-4 h-4" />
+               </button>
+             </SidebarIcon>
            )}
         </div>
 
@@ -421,12 +454,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className={cn("flex flex-col h-full gap-6 min-w-64", !isRightOpen && "hidden")}>
             <div className="flex items-center justify-between">
                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Calendar</h3>
-               <button 
-                 onClick={() => setIsRightOpen(false)}
-                 className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
-               >
-                 <PanelRightClose className="w-4 h-4" />
-               </button>
+               <SidebarIcon tooltip="Close Right Sidebar" shortcut="Ctrl + Shift + →">
+                 <button 
+                   onClick={() => setIsRightOpen(false)}
+                   className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
+                 >
+                   <PanelRightClose className="w-4 h-4" />
+                 </button>
+               </SidebarIcon>
             </div>
             
             <div className="bg-background rounded-lg border border-border p-2 shadow-sm">
@@ -547,5 +582,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TooltipProvider>
   );
 }
