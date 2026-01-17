@@ -1,14 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRoute } from "wouter";
 import { usePlans } from "@/hooks/use-plans";
 import { Layout } from "@/components/layout";
-import { format, parseISO, addDays, subDays, startOfISOWeek, endOfISOWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { format, parseISO, addDays, subDays, startOfISOWeek, endOfISOWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from "date-fns";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { PlanType } from "@/lib/types";
+import { PlanType, Plan } from "@/lib/types";
+import { MarkdownEditor } from "@/components/markdown-editor";
+import { HabitHeatmap } from "@/components/habit-heatmap";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function DailyPlanPage() {
   const [matchDay, paramsDay] = useRoute("/day/:date");
@@ -25,25 +29,17 @@ export default function DailyPlanPage() {
   else if (matchYear) { type = 'year'; dateStr = paramsYear.date; }
   else dateStr = format(new Date(), "yyyy-MM-dd");
 
-  const { getPlan, updatePlan } = usePlans();
+  const { getPlan, updatePlan, principles, updatePrinciples, getAllPlans } = usePlans();
   const { data: plan, isLoading } = getPlan(dateStr, type);
+  const { data: allPlans } = getAllPlans();
+  const [newHabitText, setNewHabitText] = useState("");
+  const [habitDialogOpen, setHabitDialogOpen] = useState(false);
 
-  if (isLoading || !plan) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="animate-spin text-muted-foreground" />
-        </div>
-      </Layout>
-    );
-  }
-
+  // Determine prev/next links and titles
   const dateObj = parseISO(dateStr);
-  let prevDate = "";
-  let nextDate = "";
-  let title = "";
-  let subtitle = "";
-
+  let prevDate = "", nextDate = "", title = "", subtitle = "";
+  
+  // Date Logic
   if (type === 'day') {
     prevDate = format(subDays(dateObj, 1), "yyyy-MM-dd");
     nextDate = format(addDays(dateObj, 1), "yyyy-MM-dd");
@@ -63,9 +59,58 @@ export default function DailyPlanPage() {
     prevDate = format(subDays(startOfYear(dateObj), 1), "yyyy-01-01");
     nextDate = format(addDays(endOfYear(dateObj), 1), "yyyy-01-01");
     title = format(dateObj, "yyyy");
-    subtitle = "Annual Principles & Goals";
+    subtitle = "Annual Plan";
   }
 
+  // Embedding / Reference Logic (Simulated for MVP)
+  // We need to fetch "referenced" plans. 
+  // Since we don't have complex relational queries, we use date logic.
+  const parentPlan = useMemo(() => {
+     if (!allPlans) return null;
+     if (type === 'day') {
+         // Parent is Month
+         const monthDate = format(startOfMonth(dateObj), "yyyy-MM-01");
+         return allPlans.find(p => p.type === 'month' && p.date === monthDate);
+     }
+     if (type === 'week') {
+         // Parent is Month
+         const monthDate = format(startOfMonth(dateObj), "yyyy-MM-01");
+         return allPlans.find(p => p.type === 'month' && p.date === monthDate);
+     }
+     if (type === 'month') {
+         // Parent is Year
+         const yearDate = format(startOfYear(dateObj), "yyyy-01-01");
+         return allPlans.find(p => p.type === 'year' && p.date === yearDate);
+     }
+     return null;
+  }, [allPlans, type, dateObj]);
+
+  const previousPlan = useMemo(() => {
+     if (!allPlans) return null;
+     // previous month/week logic...
+     if (type === 'month') {
+         const prev = format(subMonths(dateObj, 1), "yyyy-MM-01");
+         return allPlans.find(p => p.type === 'month' && p.date === prev);
+     }
+     if (type === 'week') {
+         const prev = format(subWeeks(dateObj, 1), "yyyy-MM-dd"); // Assuming standardized week dates
+         return allPlans.find(p => p.type === 'week' && p.date === prev);
+     }
+     return null;
+  }, [allPlans, type, dateObj]);
+
+
+  if (isLoading || !plan || !principles) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Handlers
   const handleTaskToggle = (taskId: string, isUnfinished: boolean) => {
     const listKey = isUnfinished ? 'unfinishedTasks' : 'tasks';
     const list = [...(plan[listKey] || [])];
@@ -84,85 +129,209 @@ export default function DailyPlanPage() {
     updatePlan.mutate({ planId: plan.id, updates: { notes } });
   };
 
+  const handleAddHabit = () => {
+    if (!newHabitText.trim()) return;
+    const newHabit = {
+        id: Math.random().toString(36).substr(2, 9),
+        text: newHabitText,
+        createdAt: new Date().toISOString()
+    };
+    updatePrinciples.mutate({ 
+        habitDefinitions: [...(principles.habitDefinitions || []), newHabit] 
+    });
+    setNewHabitText("");
+    setHabitDialogOpen(false);
+  };
+
+  const handleToggleHabit = (habitId: string, checked: boolean) => {
+      updatePlan.mutate({
+          planId: plan.id,
+          updates: { habits: { ...plan.habits, [habitId]: checked } }
+      });
+  };
+
   return (
     <Layout>
-      <div className="space-y-12 pb-20">
-        <header className="flex items-center justify-between">
+      <div className="space-y-12 pb-20 fade-in duration-500">
+        
+        {/* HEADER */}
+        <header className="flex items-center justify-between border-b border-border/40 pb-6">
           <Link href={`/${type}/${prevDate}`}>
-            <a className="text-muted-foreground hover:text-foreground transition-colors p-2">
-              <ChevronLeft className="w-6 h-6" />
+            <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
+              <ChevronLeft className="w-5 h-5" />
             </a>
           </Link>
           <div className="text-center">
-            <h1 className="text-4xl font-serif font-bold text-foreground mb-1">{title}</h1>
-            <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium">{subtitle}</p>
+            <h1 className="text-3xl font-serif font-bold text-foreground mb-1 tracking-tight">{title}</h1>
+            <p className="text-muted-foreground text-xs uppercase tracking-widest font-medium opacity-70">{subtitle}</p>
           </div>
           <Link href={`/${type}/${nextDate}`}>
-            <a className="text-muted-foreground hover:text-foreground transition-colors p-2">
-              <ChevronRight className="w-6 h-6" />
+            <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
+              <ChevronRight className="w-5 h-5" />
             </a>
           </Link>
         </header>
 
-        <section className="bg-muted/30 border border-border/50 rounded-lg p-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Direction & Context</h2>
-          <div className="text-sm text-muted-foreground italic">
-            Inheriting values from Principles document and upper level plans...
-          </div>
-        </section>
+        {/* EMBEDDED CONTEXT (Top Section) */}
+        {/* For Daily: Show Month Context */}
+        {type === 'day' && parentPlan && (
+            <section className="bg-muted/20 border border-border/40 rounded-lg p-5">
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                    Monthly Direction
+                </h2>
+                <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
+                    {parentPlan.notes || "No direction set for this month yet."}
+                </div>
+                <Link href={`/month/${parentPlan.date}`}>
+                    <a className="text-xs text-primary mt-2 inline-block hover:underline">View Month Plan →</a>
+                </Link>
+            </section>
+        )}
 
+        {/* For Month: Show Year Context */}
+        {type === 'month' && parentPlan && (
+            <section className="bg-muted/20 border border-border/40 rounded-lg p-5">
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                    Yearly Goals
+                </h2>
+                <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
+                    {parentPlan.notes || "No yearly goals set yet."}
+                </div>
+            </section>
+        )}
+
+        {/* TASK FLOW (Core) */}
         <section className="space-y-6">
-          <h2 className="font-serif text-2xl font-medium border-b border-border pb-2">Task Flow</h2>
+          <div className="flex items-center justify-between border-b border-border/40 pb-2">
+             <h2 className="font-serif text-xl font-medium">Task Flow</h2>
+             {plan.unfinishedTasks && plan.unfinishedTasks.filter(t => !t.completed).length > 0 && (
+                 <span className="text-xs font-mono text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
+                     {plan.unfinishedTasks.filter(t => !t.completed).length} carried over
+                 </span>
+             )}
+          </div>
+
+          {/* Unfinished from Yesterday (Only show if there are any) */}
           {plan.unfinishedTasks && plan.unfinishedTasks.length > 0 && (
-            <div className="space-y-3 bg-orange-50/50 dark:bg-orange-950/10 p-4 rounded-md border border-orange-100 dark:border-orange-900/20">
-              <h3 className="text-xs font-bold uppercase text-orange-600/70 tracking-wide mb-2">Carried Over</h3>
+            <div className="space-y-2 pl-1">
               {plan.unfinishedTasks.map(task => (
                 <div key={task.id} className="flex items-start gap-3 group">
-                  <button onClick={() => handleTaskToggle(task.id, true)} className="mt-1 text-muted-foreground hover:text-primary transition-colors">
-                    {task.completed ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5" />}
+                  <button onClick={() => handleTaskToggle(task.id, true)} className="mt-1.5 text-orange-600/60 hover:text-orange-600 transition-colors">
+                    {task.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
                   </button>
-                  <span className={`text-lg transition-all ${task.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{task.text}</span>
+                  <span className={cn(
+                      "text-base transition-all font-serif",
+                      task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground/90'
+                  )}>{task.text}</span>
+                  <span className="text-[10px] text-orange-500/50 uppercase tracking-wider mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Carried Over</span>
                 </div>
               ))}
             </div>
           )}
-          <div className="space-y-3">
-             <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wide mb-2">Current</h3>
+
+          {/* Today's Tasks */}
+          <div className="space-y-2 pl-1">
             {plan.tasks.map(task => (
               <div key={task.id} className="flex items-start gap-3 group">
-                <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1 text-muted-foreground hover:text-primary transition-colors">
-                  {task.completed ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5" />}
+                <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1.5 text-muted-foreground hover:text-primary transition-colors">
+                  {task.completed ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Circle className="w-4 h-4" />}
                 </button>
-                <span className={`text-lg transition-all ${task.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{task.text}</span>
+                <span className={cn(
+                    "text-base transition-all font-serif",
+                    task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground'
+                )}>{task.text}</span>
               </div>
             ))}
-            <div className="flex items-center gap-3 pt-2">
-              <div className="w-5 h-5 flex items-center justify-center"><div className="w-1.5 h-1.5 bg-muted-foreground/30 rounded-full" /></div>
-              <Input className="border-none shadow-none focus-visible:ring-0 bg-transparent text-lg placeholder:text-muted-foreground/50 p-0 h-auto font-normal" placeholder="Add a new task..." onKeyDown={(e) => { if (e.key === 'Enter') { handleAddTask(e.currentTarget.value); e.currentTarget.value = ''; } }} />
+            
+            {/* Quick Add */}
+            <div className="flex items-center gap-3 pt-1 group">
+              <Plus className="w-4 h-4 text-muted-foreground/30 group-focus-within:text-primary/50 transition-colors" />
+              <Input 
+                  className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base placeholder:text-muted-foreground/40 p-0 h-auto font-sans" 
+                  placeholder="New task..." 
+                  onKeyDown={(e) => { 
+                      if (e.key === 'Enter') { 
+                          handleAddTask(e.currentTarget.value); 
+                          e.currentTarget.value = ''; 
+                      } 
+                  }} 
+              />
             </div>
           </div>
         </section>
 
+        {/* EDITOR (Creative Thoughts / Notes) */}
         <section className="space-y-4">
-          <h2 className="font-serif text-2xl font-medium border-b border-border pb-2">Ideas & Notes</h2>
-          <Textarea value={plan.notes || ''} onChange={(e) => handleUpdateNotes(e.target.value)} className="min-h-[200px] border-none focus-visible:ring-0 bg-transparent text-lg leading-relaxed font-serif resize-none p-0" placeholder="Capture your thoughts, ideas, and observations..." />
+          <h2 className="font-serif text-xl font-medium border-b border-border/40 pb-2">
+            {type === 'year' ? 'Goals & Vision' : type === 'month' ? 'Reflection & Initiatives' : 'Notes & Ideas'}
+          </h2>
+          <MarkdownEditor 
+            value={plan.notes || ''} 
+            onChange={(val) => handleUpdateNotes(val)} 
+            placeholder="Start typing..."
+          />
         </section>
         
+        {/* HABIT TRACKER (Bottom Widget) */}
         {type === 'day' && (
-         <section className="space-y-4 pt-8">
-          <div className="flex items-center gap-8 p-4 bg-muted/20 rounded-lg">
-             <span className="font-serif font-medium text-lg">Daily Habits</span>
-             <div className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={plan.habits?.habit1 || false} onCheckedChange={(c) => updatePlan.mutate({ planId: plan.id, updates: { habits: { ...plan.habits, habit1: !!c } } })} />
-                  <span className="text-sm">Exercise</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={plan.habits?.habit2 || false} onCheckedChange={(c) => updatePlan.mutate({ planId: plan.id, updates: { habits: { ...plan.habits, habit2: !!c } } })} />
-                  <span className="text-sm">Read</span>
-                </label>
+         <section className="space-y-4 pt-4">
+             <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Habit Tracker</h2>
+                    {principles.habitDefinitions.length < 2 && (
+                         <Dialog open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
+                            <DialogTrigger asChild>
+                                <button className="text-primary hover:bg-primary/10 rounded-full p-0.5 transition-colors">
+                                    <Plus className="w-3 h-3" />
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Define a New Habit</DialogTitle>
+                                    <DialogDescription>
+                                        Add a habit to track daily. Max 2 habits allowed.
+                                        <br/>
+                                        <span className="text-destructive font-medium mt-1 block">Warning: Once defined, habits cannot be deleted in this MVP.</span>
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <Input 
+                                    placeholder="e.g. Read 10 pages, Run 5k..." 
+                                    value={newHabitText}
+                                    onChange={(e) => setNewHabitText(e.target.value)}
+                                />
+                                <DialogFooter>
+                                    <Button onClick={handleAddHabit}>Create Habit</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                </div>
+                <span className="text-[10px] text-muted-foreground">{principles.habitDefinitions.length}/2 Habits</span>
              </div>
-          </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                {principles.habitDefinitions.map(habit => (
+                    <div key={habit.id} className="bg-card border border-border/50 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                        <span className="text-sm font-medium">{habit.text}</span>
+                        <Checkbox 
+                            checked={plan.habits?.[habit.id] || false}
+                            onCheckedChange={(checked) => handleToggleHabit(habit.id, !!checked)}
+                        />
+                    </div>
+                ))}
+                {principles.habitDefinitions.length === 0 && (
+                    <div className="col-span-2 text-center py-4 text-sm text-muted-foreground italic bg-muted/20 rounded-lg border border-dashed border-border">
+                        No habits defined yet. Click + to add one.
+                    </div>
+                )}
+             </div>
+
+             {/* Heatmap Widget */}
+             {principles.habitDefinitions.length > 0 && (
+                 <HabitHeatmap principles={principles} plans={allPlans || []} />
+             )}
         </section>
         )}
       </div>

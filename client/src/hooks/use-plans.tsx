@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { storage } from "@/lib/storage";
 import { useAuth } from "./use-auth";
-import { Plan, PlanType, Task } from "@/lib/types";
+import { Plan, PlanType, Task, Principles, HabitDefinition } from "@/lib/types";
 
 export function usePlans() {
   const { user } = useAuth();
@@ -15,9 +15,9 @@ export function usePlans() {
   });
 
   const updatePrinciples = useMutation({
-    mutationFn: (content: string) => {
+    mutationFn: (updates: Partial<Principles>) => {
       if (!user) throw new Error("No user");
-      return storage.updatePrinciples(user.id, content);
+      return storage.updatePrinciples(user.id, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['principles', user?.id] });
@@ -31,14 +31,21 @@ export function usePlans() {
     enabled: !!user
   });
 
+  const getAllPlans = () => useQuery({
+    queryKey: ['plans', user?.id],
+    queryFn: () => user ? storage.getAllPlans(user.id) : [],
+    enabled: !!user
+  });
+
   const updatePlan = useMutation({
     mutationFn: ({ planId, updates }: { planId: string, updates: Partial<Plan> }) => {
       if (!user) throw new Error("No user");
       return storage.updatePlan(user.id, planId, updates);
     },
     onSuccess: (_, variables) => {
-      // Invalidate specific plan query
-      queryClient.invalidateQueries({ queryKey: ['plan'] }); // Invalidate all plans to be safe for inheritance
+      // Invalidate specific plan query and list
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+      queryClient.invalidateQueries({ queryKey: ['plans'] });
     }
   });
 
@@ -47,6 +54,7 @@ export function usePlans() {
     loadingPrinciples,
     updatePrinciples,
     getPlan,
+    getAllPlans,
     updatePlan
   };
 }

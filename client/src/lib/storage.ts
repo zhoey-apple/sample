@@ -1,4 +1,4 @@
-import { Plan, PlanType, Principles, Task, User } from "./types";
+import { Plan, PlanType, Principles, Task, User, HabitDefinition } from "./types";
 import { format, addDays, subDays, parseISO, isSameDay, getISOWeek, startOfISOWeek, getYear, getMonth } from "date-fns";
 
 // Mock Data Store
@@ -46,6 +46,7 @@ class MockStorage {
         id: Math.random().toString(36).substr(2, 9),
         userId,
         content: "# My Life Principles\n\n1. Be honest.\n2. Create value.\n3. Stay curious.",
+        habitDefinitions: [],
         updatedAt: new Date().toISOString()
       };
       this.principles.push(p);
@@ -54,9 +55,9 @@ class MockStorage {
     return p;
   }
 
-  async updatePrinciples(userId: string, content: string): Promise<Principles> {
+  async updatePrinciples(userId: string, updates: Partial<Principles>): Promise<Principles> {
     const p = await this.getPrinciples(userId);
-    p.content = content;
+    Object.assign(p, updates);
     p.updatedAt = new Date().toISOString();
     this.save();
     return p;

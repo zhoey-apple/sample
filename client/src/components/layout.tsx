@@ -1,9 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../hooks/use-auth";
-import { format, getISOWeek, startOfISOWeek, getYear, parseISO } from "date-fns";
+import { format, getISOWeek, startOfISOWeek, parseISO } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search } from "lucide-react";
+import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { storage } from "@/lib/storage";
@@ -44,7 +44,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const pathParts = location.split('/');
-  const currentDate = pathParts[1] === 'day' && pathParts[2] ? parseISO(pathParts[2]) : new Date();
+  // Try to parse date from URL, fallback to today
+  let currentDate = new Date();
+  if (pathParts[1] && pathParts[2]) {
+     try {
+       currentDate = parseISO(pathParts[2]);
+     } catch (e) {
+       // ignore
+     }
+  }
 
   const toggleExpand = (key: string) => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -71,48 +79,104 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex font-sans text-foreground">
-      {/* Sidebar */}
-      <aside className="w-80 border-r border-border bg-card flex flex-col h-screen sticky top-0">
-        <div className="p-6 flex-shrink-0">
-          <h1 className="font-serif text-2xl font-bold tracking-tight mb-2 text-primary">
-            Life Principles
-          </h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-8">
-            Structured Diary
-          </p>
+    <div className="h-screen overflow-hidden bg-background flex font-sans text-foreground">
+      
+      {/* LEFT SIDEBAR: Navigation & Files */}
+      <aside className="w-64 border-r border-border bg-card/50 flex flex-col h-full flex-shrink-0">
+        <div className="p-4 flex items-center gap-3 border-b border-border/40 h-14">
+           <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold">L</div>
+           <span className="font-serif font-semibold tracking-tight">Life Principles</span>
+        </div>
 
-          <nav className="space-y-4 mb-8">
-            <Link href="/principles">
-              <a className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                location === "/principles" 
-                  ? "bg-primary/10 text-primary" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}>
-                <Book className="w-4 h-4" />
-                <span>Life Principles</span>
-              </a>
-            </Link>
-            <button 
-                onClick={() => setOpen(true)}
-                className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-                <div className="flex items-center gap-3">
-                    <Search className="w-4 h-4" />
-                    <span>Search Commands</span>
-                </div>
-                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                    <span className="text-xs">⌘</span>P
-                </kbd>
-            </button>
-          </nav>
+        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
+           {/* Global Actions */}
+           <div className="px-2 space-y-1">
+              <button 
+                  onClick={() => setOpen(true)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
+              >
+                  <Search className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left">Search</span>
+                  <kbd className="text-[10px] bg-muted/50 px-1 rounded opacity-70">⌘P</kbd>
+              </button>
+              <Link href="/principles">
+                <a className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors w-full group",
+                  location === "/principles" 
+                    ? "bg-primary/10 text-primary font-medium" 
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                )}>
+                  <Book className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span>Principles</span>
+                </a>
+              </Link>
+           </div>
 
-          <div className="mb-8">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-3">
-              Calendar
-            </div>
-            <div className="bg-background rounded-lg border border-border p-2 shadow-sm relative">
+           {/* Folder Tree */}
+           <div className="space-y-1">
+              {(['yearly', 'monthly', 'weekly', 'daily'] as const).map(type => (
+                  <div key={type} className="space-y-1">
+                      <button 
+                          onClick={() => toggleExpand(type)}
+                          className="w-full flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                          {expanded[type] ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                          <span className="ml-1">{type}</span>
+                      </button>
+                      
+                      {expanded[type] && (
+                          <div className="ml-2 pl-2 border-l border-border/40 space-y-0.5">
+                              {groupedPlans[type].map(plan => (
+                                  <Link key={plan.id} href={`/${plan.type}/${plan.date}`}>
+                                      <a className={cn(
+                                          "flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors truncate",
+                                          location === `/${plan.type}/${plan.date}` 
+                                              ? "bg-accent text-accent-foreground font-medium" 
+                                              : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                                      )}>
+                                          <FileText className="w-3.5 h-3.5 opacity-70 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {plan.type === 'day' ? format(parseISO(plan.date), "MMM d") : 
+                                             plan.type === 'week' ? `Week ${format(parseISO(plan.date), "w")}` :
+                                             plan.type === 'month' ? format(parseISO(plan.date), "MMMM") :
+                                             plan.date.substring(0, 4)}
+                                          </span>
+                                      </a>
+                                  </Link>
+                              ))}
+                              {groupedPlans[type].length === 0 && (
+                                  <div className="px-2 py-1 text-xs text-muted-foreground/50 italic pl-6">Empty</div>
+                              )}
+                          </div>
+                      )}
+                  </div>
+              ))}
+           </div>
+        </div>
+        
+        <div className="p-4 border-t border-border/40 flex items-center gap-3">
+             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+                <User className="w-4 h-4 text-muted-foreground" />
+             </div>
+             <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{user?.name || 'User'}</div>
+                <button onClick={logout} className="text-xs text-muted-foreground hover:text-destructive transition-colors">Sign Out</button>
+             </div>
+        </div>
+      </aside>
+
+      {/* CENTER: Main Content */}
+      <main className="flex-1 h-full overflow-y-auto bg-background relative flex flex-col items-center">
+        <div className="w-full max-w-3xl py-12 px-12 min-h-full">
+          {children}
+        </div>
+      </main>
+
+      {/* RIGHT SIDEBAR: Calendar & Tools */}
+      <aside className="w-72 border-l border-border bg-card/30 flex flex-col h-full flex-shrink-0 p-4 gap-6">
+        <div>
+           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Calendar</h3>
+           <div className="bg-background rounded-lg border border-border p-2 shadow-sm">
               <DayPicker
                 mode="single"
                 showWeekNumber
@@ -127,81 +191,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
                   table: "w-full border-collapse space-y-1",
                   head_row: "flex",
-                  head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                  head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.7rem]",
                   row: "flex w-full mt-2",
-                  cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
+                  cell: "h-8 w-8 text-center text-xs p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                  day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
                   day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "bg-accent text-accent-foreground",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
+                  day_today: "bg-accent text-accent-foreground font-bold",
+                  day_outside: "text-muted-foreground opacity-30",
+                  day_disabled: "text-muted-foreground opacity-30",
                   day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
                   day_hidden: "invisible",
-                  week_number: "text-muted-foreground/40 text-[10px] w-9 flex items-center justify-center font-mono",
+                  week_number: "text-muted-foreground/30 text-[9px] w-6 flex items-center justify-center font-mono select-none",
                 }}
               />
-            </div>
-          </div>
+           </div>
         </div>
-
-        {/* Plan File Tree */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-3">
-              Plans
-            </div>
-            {(['yearly', 'monthly', 'weekly', 'daily'] as const).map(type => (
-                <div key={type} className="space-y-1">
-                    <button 
-                        onClick={() => toggleExpand(type)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        {expanded[type] ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                        <Folder className="w-4 h-4 text-primary/60" />
-                        <span className="capitalize">{type}</span>
-                    </button>
-                    {expanded[type] && (
-                        <div className="ml-7 space-y-1 border-l border-border/50 pl-2">
-                            {groupedPlans[type].map(plan => (
-                                <Link key={plan.id} href={`/${plan.type}/${plan.date}`}>
-                                    <a className={cn(
-                                        "flex items-center gap-2 px-3 py-1 rounded-md text-xs transition-colors",
-                                        location === `/${plan.type}/${plan.date}` 
-                                            ? "bg-primary/5 text-primary font-medium" 
-                                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                                    )}>
-                                        <FileText className="w-3 h-3 opacity-50" />
-                                        <span>{plan.type === 'day' ? format(parseISO(plan.date), "MMM d, yyyy") : plan.date}</span>
-                                    </a>
-                                </Link>
-                            ))}
-                            {groupedPlans[type].length === 0 && (
-                                <div className="px-3 py-1 text-[10px] text-muted-foreground italic opacity-50">
-                                    No {type} plans yet
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
-
-        <div className="mt-auto p-6 border-t border-border flex-shrink-0">
-          <button 
-            onClick={logout}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
-          </button>
+        
+        <div className="flex-1">
+            {/* Future Widgets Area (e.g. Timer, Stats) */}
         </div>
       </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-background">
-        <div className="max-w-3xl mx-auto py-12 px-8 min-h-screen">
-          {children}
-        </div>
-      </main>
 
       {/* Command Palette */}
       <CommandDialog open={open} onOpenChange={setOpen}>

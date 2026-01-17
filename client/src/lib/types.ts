@@ -26,15 +26,22 @@ export type Plan = {
   tasks: Task[];
   unfinishedTasks: Task[]; // Inherited from previous
   
-  habits?: Record<string, boolean>; // Simple key-value for habit completion
+  habits?: Record<string, boolean>; // Key is habit ID, value is completion
   
   createdAt: string;
   updatedAt: string;
+};
+
+export type HabitDefinition = {
+  id: string;
+  text: string;
+  createdAt: string;
 };
 
 export type Principles = {
   id: string;
   userId: string;
   content: string; // Markdown
+  habitDefinitions: HabitDefinition[]; // Max 2
   updatedAt: string;
 };
