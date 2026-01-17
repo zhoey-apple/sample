@@ -88,7 +88,8 @@ class MockStorage {
       if (yesterdayPlan) {
         const pending = yesterdayPlan.tasks.filter(t => !t.completed);
         const inherited = yesterdayPlan.unfinishedTasks.filter(t => !t.completed);
-        unfinishedTasks = [...pending, ...inherited].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
+        // Combine inherited first, then pending to preserve visual hierarchy/order
+        unfinishedTasks = [...inherited, ...pending].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
       }
     } else if (type === 'week') {
         // Week plan inheritance
@@ -98,7 +99,7 @@ class MockStorage {
         if (lastWeekPlan) {
             const pending = lastWeekPlan.tasks.filter(t => !t.completed);
             const inherited = lastWeekPlan.unfinishedTasks.filter(t => !t.completed);
-            unfinishedTasks = [...pending, ...inherited].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
+            unfinishedTasks = [...inherited, ...pending].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
         }
     }
 
