@@ -13,6 +13,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { CalendarDayButton } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBreakpoints } from "@/hooks/use-mobile";
 
 // Extracted Outline Item Component
 const OutlineItem = ({ 
@@ -67,23 +68,58 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   
   // Sidebar State
-  const [isLeftOpen, setIsLeftOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sidebar-left");
-      return saved !== null ? JSON.parse(saved) : true;
+  // Default to true (desktop) until effect runs, or false if we want "mobile first" behavior to avoid flash
+  // For SSR safety (though this is SPA), we can init true.
+  const [isLeftOpen, setIsLeftOpen] = useState(true);
+  const [isRightOpen, setIsRightOpen] = useState(true);
+
+  // Initial Sync and Breakpoint Logic
+  useEffect(() => {
+    // If mobile or tablet, force closed by default when breakpoint hits
+    if (isMobile || isTablet) {
+        setIsLeftOpen(false);
+        setIsRightOpen(false);
+    } else {
+        // Desktop: Restore from local storage or default to true
+        const savedLeft = localStorage.getItem("sidebar-left");
+        const savedRight = localStorage.getItem("sidebar-right");
+        setIsLeftOpen(savedLeft !== null ? JSON.parse(savedLeft) : true);
+        setIsRightOpen(savedRight !== null ? JSON.parse(savedRight) : true);
     }
-    return true;
-  });
-  
-  const [isRightOpen, setIsRightOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sidebar-right");
-      return saved !== null ? JSON.parse(saved) : true;
+  }, [isMobile, isTablet]); // Only run when these change (specifically when switching modes)
+
+  // Persist Sidebar State (Only on Desktop)
+  useEffect(() => {
+    if (isDesktop) {
+        localStorage.setItem("sidebar-left", JSON.stringify(isLeftOpen));
     }
-    return true;
-  });
+  }, [isLeftOpen, isDesktop]);
+
+  useEffect(() => {
+    if (isDesktop) {
+        localStorage.setItem("sidebar-right", JSON.stringify(isRightOpen));
+    }
+  }, [isRightOpen, isDesktop]);
+
+  // Handle toggling with mobile mutual exclusion
+  const setLeft = (value: boolean | ((prev: boolean) => boolean)) => {
+      setIsLeftOpen(prev => {
+          const newState = typeof value === 'function' ? value(prev) : value;
+          if (newState && isMobile) setIsRightOpen(false);
+          return newState;
+      });
+  };
+
+  const setRight = (value: boolean | ((prev: boolean) => boolean)) => {
+      setIsRightOpen(prev => {
+          const newState = typeof value === 'function' ? value(prev) : value;
+          if (newState && isMobile) setIsLeftOpen(false);
+          return newState;
+      });
+  };
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     yearly: true,
@@ -158,23 +194,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const handleOutlineClick = (targetId: string) => {
       // Simple scroll logic
-      // In a real app we might use refs, but for MVP we'll try to find by ID
-      // or just focus the main areas
-      // For now, we can scroll to sections if we add IDs to them in the page
       const el = document.getElementById(targetId);
       if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
       }
+      if (isMobile) setRight(false); // Close sidebar on selection
   };
-
-  // Persist Sidebar State
-  useEffect(() => {
-    localStorage.setItem("sidebar-left", JSON.stringify(isLeftOpen));
-  }, [isLeftOpen]);
-
-  useEffect(() => {
-    localStorage.setItem("sidebar-right", JSON.stringify(isRightOpen));
-  }, [isRightOpen]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -189,21 +214,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (e.shiftKey && (e.metaKey || e.ctrlKey)) {
         if (e.key === "ArrowLeft") {
           e.preventDefault();
-          setIsLeftOpen((prev: boolean) => !prev);
+          setLeft((prev: boolean) => !prev);
         }
         if (e.key === "ArrowRight") {
           e.preventDefault();
-          setIsRightOpen((prev: boolean) => !prev);
+          setRight((prev: boolean) => !prev);
         }
       }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [isMobile]); // Re-bind if mobile changes to capture updated state logic implicitly via setLeft/setRight? Actually those use callbacks so it's fine.
 
   const handleDayClick = (day: Date) => {
     const dateStr = format(day, "yyyy-MM-dd");
     setLocation(`/day/${dateStr}`);
+    if (isMobile) setRight(false);
   };
 
   const toggleExpand = (key: string) => {
@@ -285,13 +311,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="h-screen overflow-hidden bg-background flex font-sans text-foreground">
+    <div className="h-screen overflow-hidden bg-background flex font-sans text-foreground relative">
       
+      {/* MOBILE BACKDROP */}
+      {isMobile && (isLeftOpen || isRightOpen) && (
+        <div 
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+            onClick={() => {
+                setLeft(false);
+                setRight(false);
+            }}
+        />
+      )}
+
       {/* LEFT SIDEBAR: Navigation & Files */}
       <aside 
         className={cn(
-          "border-r border-border bg-card/50 flex flex-col h-full flex-shrink-0 transition-all duration-300 ease-in-out relative",
-          isLeftOpen ? "w-64" : "w-0 border-r-0 opacity-0 overflow-hidden"
+          "bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex flex-col h-full transition-all duration-300 ease-in-out border-r border-border",
+          // Mobile: Fixed, Full Height, Z-50
+          isMobile 
+            ? cn("fixed inset-y-0 left-0 z-50 w-3/4 max-w-[300px] shadow-2xl transform", isLeftOpen ? "translate-x-0" : "-translate-x-full")
+            : cn("relative flex-shrink-0", isLeftOpen ? "w-64" : "w-0 border-r-0 opacity-0 overflow-hidden")
         )}
       >
         <div className="p-4 flex items-center gap-3 border-b border-border/40 h-14 min-w-64">
@@ -299,7 +339,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
            <span className="font-serif font-semibold tracking-tight">Life Principles</span>
            <SidebarIcon tooltip="Close Left Sidebar" shortcut="Ctrl + Shift + ←">
              <button 
-               onClick={() => setIsLeftOpen(false)}
+               onClick={() => setLeft(false)}
                className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
              >
                <PanelLeftClose className="w-4 h-4" />
@@ -362,7 +402,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                                   <ContextMenu key={plan.id}>
                                     <ContextMenuTrigger>
                                         <Link href={`/${plan.type}/${plan.date}`}>
-                                            <a className={cn(
+                                            <a 
+                                                onClick={() => isMobile && setLeft(false)} // Close on mobile click
+                                                className={cn(
                                                 "flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors truncate",
                                                 location === `/${plan.type}/${plan.date}` 
                                                     ? "bg-accent text-accent-foreground font-medium" 
@@ -411,15 +453,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* CENTER: Main Content */}
-      <main className="flex-1 h-full overflow-y-auto bg-background relative flex flex-col items-center transition-all duration-300">
+      <main className={cn(
+          "flex-1 h-full overflow-y-auto bg-background relative flex flex-col items-center transition-all duration-300",
+          // On mobile, always take full width regardless of sidebar state (since sidebars overlay)
+          // On desktop, flex-1 takes remaining space.
+          isMobile ? "w-full" : ""
+      )}>
         
         {/* Collapse Toggles (Visible when sidebars closed) */}
         <div className="absolute top-4 left-4 z-10">
-           {!isLeftOpen && (
+           {(!isLeftOpen || isMobile) && ( // On mobile, toggle is always visible if sidebar is closed (or even if open? No, if open sidebar overlays it)
              <SidebarIcon tooltip="Open Left Sidebar" shortcut="Ctrl + Shift + ←">
                <button 
-                 onClick={() => setIsLeftOpen(true)}
-                 className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                 onClick={() => setLeft(true)}
+                 className={cn(
+                    "p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors",
+                    isLeftOpen && isMobile && "opacity-0 pointer-events-none" // Hide toggle if sidebar is open on mobile (it's covered anyway, but clean up)
+                 )}
                >
                  <PanelLeftOpen className="w-4 h-4" />
                </button>
@@ -427,11 +477,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
            )}
         </div>
         <div className="absolute top-4 right-4 z-10">
-           {!isRightOpen && (
+           {(!isRightOpen || isMobile) && (
              <SidebarIcon tooltip="Open Right Sidebar" shortcut="Ctrl + Shift + →">
                <button 
-                 onClick={() => setIsRightOpen(true)}
-                 className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                 onClick={() => setRight(true)}
+                 className={cn(
+                    "p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors",
+                    isRightOpen && isMobile && "opacity-0 pointer-events-none"
+                 )}
                >
                  <PanelRightOpen className="w-4 h-4" />
                </button>
@@ -439,7 +492,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
            )}
         </div>
 
-        <div className="w-full max-w-3xl py-12 px-12 min-h-full">
+        <div className={cn(
+            "w-full min-h-full py-12 px-8 transition-all duration-300",
+            isMobile ? "px-4" : "max-w-3xl px-12"
+        )}>
           {children}
         </div>
       </main>
@@ -447,16 +503,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* RIGHT SIDEBAR: Calendar & Tools */}
       <aside 
         className={cn(
-          "border-l border-border bg-card/30 flex flex-col h-full flex-shrink-0 transition-all duration-300 ease-in-out relative",
-          isRightOpen ? "w-72 p-4" : "w-0 p-0 border-l-0 opacity-0 overflow-hidden"
+          "bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex flex-col h-full transition-all duration-300 ease-in-out border-l border-border",
+          isMobile 
+            ? cn("fixed inset-y-0 right-0 z-50 w-3/4 max-w-[300px] shadow-2xl transform", isRightOpen ? "translate-x-0" : "translate-x-full")
+            : cn("relative flex-shrink-0", isRightOpen ? "w-72 p-4" : "w-0 p-0 border-l-0 opacity-0 overflow-hidden")
         )}
       >
-        <div className={cn("flex flex-col h-full gap-6 min-w-64", !isRightOpen && "hidden")}>
+        <div className={cn("flex flex-col h-full gap-6 min-w-64", (!isRightOpen && !isMobile) && "hidden", isMobile && "p-4")}>
             <div className="flex items-center justify-between">
                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Calendar</h3>
                <SidebarIcon tooltip="Close Right Sidebar" shortcut="Ctrl + Shift + →">
                  <button 
-                   onClick={() => setIsRightOpen(false)}
+                   onClick={() => setRight(false)}
                    className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
                  >
                    <PanelRightClose className="w-4 h-4" />
@@ -485,7 +543,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.7rem]",
                   row: "flex w-full mt-2",
                   cell: "h-8 w-8 text-center text-xs p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                  day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
+                  day: cn("h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors", isMobile && "h-7 w-7 text-xs"),
                   day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                   day_today: "bg-accent text-accent-foreground font-bold",
                   day_outside: "text-muted-foreground opacity-30",
@@ -523,64 +581,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
            </div>
         </div>
       </aside>
-
-      {/* Command Palette */}
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Type a command or search..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Actions">
-            <CommandItem onSelect={() => executeCommand('year')}>
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Create / Open Year Plan</span>
-            </CommandItem>
-            <CommandItem onSelect={() => executeCommand('month')}>
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Create / Open Month Plan</span>
-            </CommandItem>
-            <CommandItem onSelect={() => executeCommand('week')}>
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Create / Open Week Plan</span>
-            </CommandItem>
-            <CommandItem onSelect={() => executeCommand('day')}>
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Create / Open Day Plan</span>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Help">
-            <CommandItem onSelect={() => {
-                setOpen(false);
-                window.dispatchEvent(new Event("open-onboarding"));
-            }}>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Open Usage Guide</span>
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the plan for <span className="font-medium text-foreground">{planToDelete ? format(parseISO(planToDelete.date), "MMMM d, yyyy") : 'this date'}</span>. 
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-                Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
     </TooltipProvider>
   );

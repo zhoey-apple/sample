@@ -1,0 +1,95 @@
+Implement full responsive design to support mobile and tablet devices.
+Do NOT create a separate mobile app. This must be a responsive web app.
+
+Overall Goal:
+- The diary website must automatically adapt to different screen sizes.
+- Core writing and planning workflows must remain usable on mobile.
+
+Responsive Breakpoints:
+- Desktop: ≥ 1024px
+- Tablet: 768px – 1023px
+- Mobile: ≤ 767px
+
+Layout Rules:
+
+1. Desktop (unchanged behavior):
+- Left sidebar (document list) visible by default
+- Center editor visible
+- Right sidebar (calendar + outline) visible by default
+
+2. Tablet:
+- Center editor remains primary focus
+- Left sidebar collapsed by default
+- Right sidebar collapsed by default
+- Sidebars can be opened via:
+  - Sidebar icons
+  - Keyboard shortcuts (if external keyboard is connected)
+
+3. Mobile:
+- Single-column layout
+- Center editor occupies full screen
+- Left and right sidebars are hidden by default
+- Sidebars open as overlay panels (slide-in or modal-style)
+- Only one sidebar can be open at a time
+
+Sidebar Behavior on Mobile:
+- Opening a sidebar should:
+  - Overlay the editor
+  - Dim the background editor slightly
+- Closing sidebar returns user to editor immediately
+- Sidebar state should be remembered during the session
+
+Calendar (Right Sidebar) on Mobile:
+- Calendar must remain fully functional
+- Display modes:
+  - Default: month view
+  - Compact spacing for small screens
+- Highlight:
+  - Today
+  - Dates with existing documents
+- Tapping a date:
+  - Creates or opens the daily page
+  - Automatically closes the calendar panel
+
+Document List (Left Sidebar) on Mobile:
+- Folder-based structure:
+  - yearly
+  - monthly
+  - weekly
+  - daily
+- Folders are collapsible
+- Long-press or tap-and-hold:
+  - Opens context menu (delete document)
+
+Editor Behavior on Mobile:
+- Editor must remain fully editable:
+  - Typing
+  - Deleting
+  - Undo / redo
+  - Checklist toggling
+- No read-only mode on mobile
+- Cursor behavior must be stable
+
+Touch Interaction:
+- Replace hover-only interactions with:
+  - Tap
+  - Long-press
+- Tooltip content (shortcuts, hints):
+  - Accessible via long-press on mobile
+  - Or displayed in a small helper popup
+
+Onboarding & Help on Mobile:
+- First-time user guide must be mobile-friendly:
+  - Vertical scrolling
+  - No hover dependencies
+- Question-mark (?) help icons:
+  - Tap to open explanation
+  - Tap outside to close
+
+Performance Constraints:
+- Avoid heavy animations on mobile
+- Ensure fast initial load
+- No blocking layout shifts
+
+Accessibility:
+- Font sizes must scale appropr
