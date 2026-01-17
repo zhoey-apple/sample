@@ -294,6 +294,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   day_hidden: "invisible",
                   week_number: "text-muted-foreground/30 text-[9px] w-6 flex items-center justify-center font-mono select-none",
                 }}
+                modifiers={{
+                  hasPlan: (date) => plans.some(p => p.type === 'day' && p.date === format(date, "yyyy-MM-dd"))
+                }}
+                modifiersClassNames={{
+                  hasPlan: "after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary/40 after:rounded-full"
+                }}
               />
            </div>
            
