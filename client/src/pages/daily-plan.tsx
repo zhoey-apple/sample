@@ -280,7 +280,7 @@ export default function DailyPlanPage() {
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Habit Tracker</h2>
-                    {principles.habitDefinitions.length < 2 && (
+                    {(principles.habitDefinitions?.length || 0) < 2 && (
                          <Dialog open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
                             <DialogTrigger asChild>
                                 <button className="text-primary hover:bg-primary/10 rounded-full p-0.5 transition-colors">
@@ -308,11 +308,11 @@ export default function DailyPlanPage() {
                         </Dialog>
                     )}
                 </div>
-                <span className="text-[10px] text-muted-foreground">{principles.habitDefinitions.length}/2 Habits</span>
+                <span className="text-[10px] text-muted-foreground">{principles.habitDefinitions?.length || 0}/2 Habits</span>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
-                {principles.habitDefinitions.map(habit => (
+                {principles.habitDefinitions?.map(habit => (
                     <div key={habit.id} className="bg-card border border-border/50 rounded-lg p-3 flex items-center justify-between shadow-sm">
                         <span className="text-sm font-medium">{habit.text}</span>
                         <Checkbox 
@@ -321,7 +321,7 @@ export default function DailyPlanPage() {
                         />
                     </div>
                 ))}
-                {principles.habitDefinitions.length === 0 && (
+                {(principles.habitDefinitions?.length || 0) === 0 && (
                     <div className="col-span-2 text-center py-4 text-sm text-muted-foreground italic bg-muted/20 rounded-lg border border-dashed border-border">
                         No habits defined yet. Click + to add one.
                     </div>
@@ -329,7 +329,7 @@ export default function DailyPlanPage() {
              </div>
 
              {/* Heatmap Widget */}
-             {principles.habitDefinitions.length > 0 && (
+             {(principles.habitDefinitions?.length || 0) > 0 && (
                  <HabitHeatmap principles={principles} plans={allPlans || []} />
              )}
         </section>

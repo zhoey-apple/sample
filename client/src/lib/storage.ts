@@ -51,6 +51,10 @@ class MockStorage {
       };
       this.principles.push(p);
       this.save();
+    } else if (!p.habitDefinitions) {
+      // Migration for existing data
+      p.habitDefinitions = [];
+      this.save();
     }
     return p;
   }
