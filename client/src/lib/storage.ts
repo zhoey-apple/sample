@@ -80,17 +80,10 @@ class MockStorage {
     // Inheritance Logic
     let unfinishedTasks: Task[] = [];
     
-    // For daily plans, check yesterday for unfinished tasks
+    // For daily plans, we no longer copy unfinished tasks. 
+    // They are now referenced dynamically in the UI.
     if (type === 'day') {
-      const yesterday = format(subDays(parseISO(date), 1), 'yyyy-MM-dd');
-      const yesterdayPlan = this.plans.find(p => p.userId === userId && p.date === yesterday && p.type === 'day');
-      
-      if (yesterdayPlan) {
-        const pending = yesterdayPlan.tasks.filter(t => !t.completed);
-        const inherited = yesterdayPlan.unfinishedTasks.filter(t => !t.completed);
-        // Combine inherited first, then pending to preserve visual hierarchy/order
-        unfinishedTasks = [...inherited, ...pending].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
-      }
+       // logic removed as per new requirement
     } else if (type === 'week') {
         // Week plan inheritance
         const dateObj = parseISO(date);

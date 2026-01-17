@@ -100,6 +100,11 @@ export default function DailyPlanPage() {
   }, [allPlans, type, dateObj]);
 
 
+  const previousDayPlan = useMemo(() => {
+    if (!allPlans || type !== 'day') return null;
+    return allPlans.find(p => p.type === 'day' && p.date === prevDate);
+  }, [allPlans, type, prevDate]);
+
   const historyPlan = useMemo(() => {
      if (!allPlans || type !== 'day') return null;
      // Find plan from same day and month but different year
@@ -147,6 +152,15 @@ export default function DailyPlanPage() {
   }
 
   // Handlers
+  const handleTogglePreviousDayTask = (taskId: string) => {
+    if (!previousDayPlan) return;
+    const list = [...previousDayPlan.tasks];
+    const taskIndex = list.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    list[taskIndex] = { ...list[taskIndex], completed: !list[taskIndex].completed };
+    updatePlan.mutate({ planId: previousDayPlan.id, updates: { tasks: list } });
+  };
+
   const handleTaskToggle = (taskId: string, isUnfinished: boolean) => {
     const listKey = isUnfinished ? 'unfinishedTasks' : 'tasks';
     const list = [...(plan[listKey] || [])];
@@ -294,32 +308,37 @@ export default function DailyPlanPage() {
         <section id="section-tasks" className="space-y-6">
           <div className="flex items-center justify-between border-b border-border/40 pb-2">
              <h2 className="font-serif text-xl font-medium">Task Flow</h2>
-             {plan.unfinishedTasks && plan.unfinishedTasks.filter(t => !t.completed).length > 0 && (
+             {previousDayPlan && previousDayPlan.tasks.filter(t => !t.completed).length > 0 && (
                  <span className="text-xs font-mono text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
-                     {plan.unfinishedTasks.filter(t => !t.completed).length} carried over
+                     {previousDayPlan.tasks.filter(t => !t.completed).length} from yesterday
                  </span>
              )}
           </div>
 
-          {/* Unfinished from Yesterday (Only show if there are any) */}
-          {plan.unfinishedTasks && plan.unfinishedTasks.length > 0 && (
-            <div id="section-unfinished" className="space-y-2 pl-1">
-              {plan.unfinishedTasks.map(task => (
-                <div key={task.id} className="flex items-start gap-3 group">
-                  <button onClick={() => handleTaskToggle(task.id, true)} className="mt-1.5 text-orange-600/60 hover:text-orange-600 transition-colors">
-                    {task.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+          {/* Unfinished from Yesterday */}
+          {previousDayPlan && previousDayPlan.tasks.filter(t => !t.completed).length > 0 && (
+            <div id="section-unfinished" className="space-y-3 pl-1 mb-6 bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-100 dark:border-orange-900/20">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-orange-600/70 mb-2 flex items-center gap-2">
+                 <History className="w-3 h-3" />
+                 Unfinished Tasks from Yesterday
+              </h3>
+              {previousDayPlan.tasks.filter(t => !t.completed).map(task => (
+                <div 
+                    key={task.id} 
+                    className="flex items-start gap-3 group transition-all opacity-80 hover:opacity-100"
+                    style={{ marginLeft: `${(task.indentLevel || 0) * 1.5}rem` }}
+                >
+                  <button onClick={() => handleTogglePreviousDayTask(task.id)} className="mt-1.5 text-orange-600/60 hover:text-orange-600 transition-colors flex-shrink-0">
+                    <Circle className="w-4 h-4" />
                   </button>
-                  <span className={cn(
-                      "text-base transition-all font-serif flex-1",
-                      task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground/90'
-                  )}>{task.text}</span>
-                  <button 
-                    onClick={() => handleDeleteTask(task.id, true)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all p-1"
-                    title="Delete task"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <Input
+                    value={task.text}
+                    disabled
+                    className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base p-0 h-auto font-serif flex-1 min-w-0 placeholder:text-muted-foreground/50 text-foreground/80 cursor-not-allowed"
+                  />
+                  <div className="text-[10px] text-orange-600/40 uppercase font-medium mt-1.5 px-2">
+                     Linked
+                  </div>
                 </div>
               ))}
             </div>
