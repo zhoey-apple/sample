@@ -3,7 +3,7 @@ import { useRoute } from "wouter";
 import { usePlans } from "@/hooks/use-plans";
 import { Layout } from "@/components/layout";
 import { format, parseISO, addDays, subDays, startOfISOWeek, endOfISOWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from "date-fns";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
@@ -129,6 +129,13 @@ export default function DailyPlanPage() {
     updatePlan.mutate({ planId: plan.id, updates: { notes } });
   };
 
+  const handleDeleteTask = (taskId: string, isUnfinished: boolean) => {
+    const listKey = isUnfinished ? 'unfinishedTasks' : 'tasks';
+    const list = [...(plan[listKey] || [])];
+    const updatedList = list.filter(t => t.id !== taskId);
+    updatePlan.mutate({ planId: plan.id, updates: { [listKey]: updatedList } });
+  };
+
   const handleAddHabit = () => {
     if (!newHabitText.trim()) return;
     const newHabit = {
@@ -222,10 +229,16 @@ export default function DailyPlanPage() {
                     {task.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
                   </button>
                   <span className={cn(
-                      "text-base transition-all font-serif",
+                      "text-base transition-all font-serif flex-1",
                       task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground/90'
                   )}>{task.text}</span>
-                  <span className="text-[10px] text-orange-500/50 uppercase tracking-wider mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Carried Over</span>
+                  <button 
+                    onClick={() => handleDeleteTask(task.id, true)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all p-1"
+                    title="Delete task"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -234,14 +247,21 @@ export default function DailyPlanPage() {
           {/* Today's Tasks */}
           <div className="space-y-2 pl-1">
             {plan.tasks.map(task => (
-              <div key={task.id} className="flex items-start gap-3 group">
+              <div key={task.id} className="flex items-start gap-3 group min-h-[28px]">
                 <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1.5 text-muted-foreground hover:text-primary transition-colors">
                   {task.completed ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Circle className="w-4 h-4" />}
                 </button>
                 <span className={cn(
-                    "text-base transition-all font-serif",
+                    "text-base transition-all font-serif flex-1",
                     task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground'
                 )}>{task.text}</span>
+                <button 
+                    onClick={() => handleDeleteTask(task.id, false)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all p-1"
+                    title="Delete task"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
             
