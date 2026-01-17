@@ -1,0 +1,184 @@
+You are a senior full-stack engineer and product-oriented builder.
+
+Your task is to build an MVP web application called:
+
+"Life Principles Diary"
+
+This is NOT a simple todo app.
+It is a structured diary system organized by time (year / month / week / day),
+with a strong emphasis on principles, continuity, and inheritance.
+
+--------------------------------
+1. PRODUCT PHILOSOPHY (VERY IMPORTANT)
+--------------------------------
+
+Follow these principles strictly:
+
+1. Principles First:
+   All plans (year / month / week / day) must be traceable back to ONE global document:
+   "Life Principles".
+
+2. Single Main Goal:
+   Each year can only have ONE main goal.
+
+3. Embed, Not Copy:
+   Lower-level plans must REFERENCE higher-level plans.
+   Do NOT duplicate text.
+   Updates to upper levels must automatically reflect everywhere.
+
+4. Unfinished Tasks Must Persist:
+   Unfinished tasks NEVER disappear automatically.
+   They must flow into the next time period until completed or manually deleted.
+
+5. Time Is the Core Structure:
+   Everything is organized by date.
+   A day without a date is invalid.
+
+6. Lightweight but Serious:
+   Keep the UI simple.
+   No gamification.
+   No social features.
+   No AI analysis.
+
+--------------------------------
+2. MVP SCOPE (STRICT)
+--------------------------------
+
+You MUST implement ONLY the following modules:
+
+- User authentication (email login only)
+- Life Principles (single document per user)
+- Daily Plan
+- Weekly Plan
+- Calendar-based navigation
+
+Do NOT implement:
+- Social features
+- Public sharing
+- AI analysis
+- Mobile optimization
+- Multi-device sync
+
+--------------------------------
+3. CORE USER FLOW (CRITICAL)
+--------------------------------
+
+The calendar is the ONLY entry point for Daily Plans.
+
+Calendar behavior:
+- Show current month
+- Highlight today
+- Clicking a date:
+  - If a daily plan exists → open it
+  - If not → automatically create it and open it
+
+There must be:
+- One daily plan per date
+- No "New Daily Plan" button
+
+--------------------------------
+4. DATA MODEL REQUIREMENTS
+--------------------------------
+
+Use a unified data model for plans:
+
+Plan {
+  id
+  userId
+  type: "year" | "month" | "week" | "day"
+  date (ISO format)
+  content (structured fields)
+  references (IDs of related plans)
+  unfinishedTasks
+  createdAt
+  updatedAt
+}
+
+Embedding rules:
+- Embedded content must be dynamically queried by reference
+- Never duplicate stored text
+
+--------------------------------
+5. DAILY PLAN STRUCTURE (CORE)
+--------------------------------
+
+A daily plan must support the following sections:
+
+1. Direction
+   - Embedded monthly plan
+   - Embedded weekly focus
+
+2. Time Continuity
+   - Link to yesterday
+   - Link to tomorrow
+
+3. Task Flow
+   - Unfinished tasks from yesterday (auto inherited)
+   - Today's tasks
+   - Unfinished today (persist forward)
+
+4. Ideas
+   - Free text notes
+
+5. Habits (lightweight)
+   - Maximum 2 habits
+   - Checkbox completion
+
+6. On This Day in History
+   - Show ideas from the same date in previous years
+
+Important:
+- Filling ONLY one section (e.g. today's tasks) still counts as valid usage
+
+--------------------------------
+6. WEEKLY PLAN (BASIC VERSION)
+--------------------------------
+
+Weekly plan should:
+- Reference the current month
+- Inherit unfinished tasks from last week
+- Allow reflection text
+- Define focus for the current week
+
+--------------------------------
+7. TECH STACK GUIDANCE
+--------------------------------
+
+- Use a modern web stack (React / Next.js or equivalent)
+- Use a simple database (SQLite / Postgres / Prisma acceptable)
+- Use Markdown for text editing
+- Authentication can be simple and secure
+
+--------------------------------
+8. DELIVERY STRATEGY
+--------------------------------
+
+Build the project incrementally:
+
+Step 1:
+- Auth
+- Calendar
+- Daily Plan creation & navigation
+
+Step 2:
+- Task inheritance logic
+- Weekly Plan basics
+
+Step 3:
+- Life Principles document and embedding
+
+Always prioritize:
+- Correct logic over UI polish
+- Data integrity over features
+
+--------------------------------
+9. SUCCESS CONDITION
+--------------------------------
+
+The MVP is successful if:
+- A user can use it continuously for 7 days
+- Unfinished tasks persist correctly
+- Principles → Plans → Actions are logically connected
+
+Start with a clean architecture.
+Explain key design decisions in comments.
