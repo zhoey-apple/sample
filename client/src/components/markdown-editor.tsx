@@ -13,6 +13,7 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [internalValue, setInternalValue] = useState(value);
 
+  // Sync internal state when external value changes
   useEffect(() => {
     setInternalValue(value);
   }, [value]);

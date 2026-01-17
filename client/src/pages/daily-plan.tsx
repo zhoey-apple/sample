@@ -182,29 +182,39 @@ export default function DailyPlanPage() {
         {/* EMBEDDED CONTEXT (Top Section) */}
         {/* For Daily: Show Month Context */}
         {type === 'day' && parentPlan && (
-            <section className="bg-muted/20 border border-border/40 rounded-lg p-5">
+            <section className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                 <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
                     Monthly Direction
                 </h2>
                 <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
-                    {parentPlan.notes || "No direction set for this month yet."}
+                     <MarkdownEditor 
+                        value={parentPlan.notes || ''} 
+                        onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
+                        placeholder="Set monthly direction..."
+                        className="min-h-[60px] text-sm italic opacity-80"
+                    />
                 </div>
                 <Link href={`/month/${parentPlan.date}`}>
-                    <a className="text-xs text-primary mt-2 inline-block hover:underline">View Month Plan →</a>
+                    <a className="text-xs text-primary mt-2 inline-block hover:underline opacity-0 group-hover:opacity-100 transition-opacity">View Month Plan →</a>
                 </Link>
             </section>
         )}
 
         {/* For Month: Show Year Context */}
         {type === 'month' && parentPlan && (
-            <section className="bg-muted/20 border border-border/40 rounded-lg p-5">
+            <section className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                 <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
                     Yearly Goals
                 </h2>
                 <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
-                    {parentPlan.notes || "No yearly goals set yet."}
+                    <MarkdownEditor 
+                        value={parentPlan.notes || ''} 
+                        onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
+                        placeholder="Set yearly goals..."
+                        className="min-h-[60px] text-sm italic opacity-80"
+                    />
                 </div>
             </section>
         )}
