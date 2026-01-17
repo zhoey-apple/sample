@@ -3,19 +3,46 @@ import { useAuth } from "../hooks/use-auth";
 import { format, getISOWeek, startOfISOWeek, parseISO } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft } from "lucide-react";
+import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft, Hash, CheckSquare, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { storage } from "@/lib/storage";
 import { useState, useEffect } from "react";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plan } from "@/lib/types";
+
+// Extracted Outline Item Component
+const OutlineItem = ({ 
+  label, 
+  icon: Icon, 
+  onClick, 
+  isActive 
+}: { 
+  label: string, 
+  icon: any, 
+  onClick: () => void, 
+  isActive?: boolean 
+}) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-all text-left",
+      isActive 
+        ? "bg-primary/10 text-primary" 
+        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+    )}
+  >
+    <Icon className="w-3 h-3 flex-shrink-0" />
+    <span className="truncate">{label}</span>
+  </button>
+);
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   
-  // Sidebar State - Initialize from localStorage
+  // Sidebar State
   const [isLeftOpen, setIsLeftOpen] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sidebar-left");
@@ -44,6 +71,78 @@ export function Layout({ children }: { children: React.ReactNode }) {
     queryFn: () => user ? storage.getAllPlans(user.id) : [],
     enabled: !!user
   });
+
+  // Current Plan Data for Outline
+  const pathParts = location.split('/');
+  // Try to parse date from URL, fallback to today
+  let currentDate = new Date();
+  let currentPlanType = 'day';
+  let dateStr = "";
+  
+  if (pathParts[1] && pathParts[2]) {
+     try {
+       currentDate = parseISO(pathParts[2]);
+       currentPlanType = pathParts[1];
+       dateStr = pathParts[2];
+     } catch (e) {
+       // ignore
+     }
+  }
+
+  // Find the active plan object to generate outline
+  const activePlan = plans.find(p => p.type === currentPlanType && p.date === dateStr);
+
+  // Outline Generation Logic
+  const outlineItems = [];
+  if (activePlan) {
+      if (activePlan.type === 'day') {
+          outlineItems.push({ id: 'direction', label: 'Monthly Direction', icon: Book, targetId: 'section-direction' });
+          outlineItems.push({ id: 'tasks', label: 'Task Flow', icon: List, targetId: 'section-tasks' });
+          
+          // Add tasks to outline
+          if (activePlan.unfinishedTasks?.length > 0) {
+              outlineItems.push({ id: 'unfinished', label: `Carried Over (${activePlan.unfinishedTasks.length})`, icon: CheckSquare, targetId: 'section-unfinished', nested: true });
+          }
+          if (activePlan.tasks?.length > 0) {
+              outlineItems.push({ id: 'today', label: `Today's Tasks (${activePlan.tasks.length})`, icon: CheckSquare, targetId: 'section-today', nested: true });
+          }
+
+          outlineItems.push({ id: 'notes', label: 'Creative Thoughts', icon: FileText, targetId: 'section-notes' });
+          
+          // Parse headings from notes
+          if (activePlan.notes) {
+              const lines = activePlan.notes.split('\n');
+              lines.forEach(line => {
+                  const match = line.match(/^(#{1,3})\s+(.+)/);
+                  if (match) {
+                      outlineItems.push({ 
+                          id: `heading-${match[2]}`, 
+                          label: match[2], 
+                          icon: Hash, 
+                          targetId: 'section-notes', // Ideally scroll to specific heading but MVP just goes to editor
+                          nested: true
+                      });
+                  }
+              });
+          }
+          
+          outlineItems.push({ id: 'habits', label: 'Habit Tracker', icon: CheckSquare, targetId: 'section-habits' });
+      } else {
+          // Generic outline for other plan types
+          outlineItems.push({ id: 'notes', label: 'Notes & Goals', icon: FileText, targetId: 'section-notes' });
+      }
+  }
+
+  const handleOutlineClick = (targetId: string) => {
+      // Simple scroll logic
+      // In a real app we might use refs, but for MVP we'll try to find by ID
+      // or just focus the main areas
+      // For now, we can scroll to sections if we add IDs to them in the page
+      const el = document.getElementById(targetId);
+      if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+      }
+  };
 
   // Persist Sidebar State
   useEffect(() => {
@@ -83,17 +182,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const dateStr = format(day, "yyyy-MM-dd");
     setLocation(`/day/${dateStr}`);
   };
-
-  const pathParts = location.split('/');
-  // Try to parse date from URL, fallback to today
-  let currentDate = new Date();
-  if (pathParts[1] && pathParts[2]) {
-     try {
-       currentDate = parseISO(pathParts[2]);
-     } catch (e) {
-       // ignore
-     }
-  }
 
   const toggleExpand = (key: string) => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -303,8 +391,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
               />
            </div>
            
-           <div className="flex-1">
-                {/* Future Widgets Area */}
+           <div className="flex-1 border-t border-border/40 pt-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Outline</h3>
+                {outlineItems.length > 0 ? (
+                    <div className="space-y-1 pl-1">
+                        {outlineItems.map(item => (
+                            <div key={item.id} className={cn(item.nested && "pl-4")}>
+                                <OutlineItem 
+                                    label={item.label} 
+                                    icon={item.icon} 
+                                    onClick={() => handleOutlineClick(item.targetId)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-xs text-muted-foreground italic px-2">No active plan open</div>
+                )}
            </div>
         </div>
       </aside>

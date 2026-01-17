@@ -218,7 +218,7 @@ export default function DailyPlanPage() {
         {/* EMBEDDED CONTEXT (Top Section) */}
         {/* For Daily: Show Month Context */}
         {type === 'day' && parentPlan && (
-            <section className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
+            <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                 <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
                     Monthly Direction
@@ -239,7 +239,7 @@ export default function DailyPlanPage() {
 
         {/* For Month: Show Year Context */}
         {type === 'month' && parentPlan && (
-            <section className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
+            <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                 <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
                     Yearly Goals
@@ -256,7 +256,7 @@ export default function DailyPlanPage() {
         )}
 
         {/* TASK FLOW (Core) */}
-        <section className="space-y-6">
+        <section id="section-tasks" className="space-y-6">
           <div className="flex items-center justify-between border-b border-border/40 pb-2">
              <h2 className="font-serif text-xl font-medium">Task Flow</h2>
              {plan.unfinishedTasks && plan.unfinishedTasks.filter(t => !t.completed).length > 0 && (
@@ -268,7 +268,7 @@ export default function DailyPlanPage() {
 
           {/* Unfinished from Yesterday (Only show if there are any) */}
           {plan.unfinishedTasks && plan.unfinishedTasks.length > 0 && (
-            <div className="space-y-2 pl-1">
+            <div id="section-unfinished" className="space-y-2 pl-1">
               {plan.unfinishedTasks.map(task => (
                 <div key={task.id} className="flex items-start gap-3 group">
                   <button onClick={() => handleTaskToggle(task.id, true)} className="mt-1.5 text-orange-600/60 hover:text-orange-600 transition-colors">
@@ -291,7 +291,7 @@ export default function DailyPlanPage() {
           )}
 
           {/* Today's Tasks */}
-          <div className="space-y-2 pl-1">
+          <div id="section-today" className="space-y-2 pl-1">
             {plan.tasks.map(task => (
               <div key={task.id} className="flex items-start gap-3 group min-h-[28px]">
                 <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1.5 text-muted-foreground hover:text-primary transition-colors">
@@ -329,7 +329,7 @@ export default function DailyPlanPage() {
         </section>
 
         {/* EDITOR (Creative Thoughts / Notes) */}
-        <section className="space-y-4">
+        <section id="section-notes" className="space-y-4">
           <h2 className="font-serif text-xl font-medium border-b border-border/40 pb-2">
             {type === 'year' ? 'Goals & Vision' : type === 'month' ? 'Reflection & Initiatives' : 'Notes & Ideas'}
           </h2>
@@ -342,7 +342,7 @@ export default function DailyPlanPage() {
         
         {/* HABIT TRACKER (Bottom Widget) */}
         {type === 'day' && (
-         <section className="space-y-4 pt-4">
+         <section id="section-habits" className="space-y-4 pt-4">
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Habit Tracker</h2>
