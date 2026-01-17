@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/use-auth";
 import { format, getISOWeek, startOfISOWeek, parseISO } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User } from "lucide-react";
+import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { storage } from "@/lib/storage";
@@ -14,6 +14,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
+  
+  // Sidebar State - Initialize from localStorage
+  const [isLeftOpen, setIsLeftOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebar-left");
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+  
+  const [isRightOpen, setIsRightOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebar-right");
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     yearly: true,
     monthly: true,
@@ -27,11 +45,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
     enabled: !!user
   });
 
+  // Persist Sidebar State
+  useEffect(() => {
+    localStorage.setItem("sidebar-left", JSON.stringify(isLeftOpen));
+  }, [isLeftOpen]);
+
+  useEffect(() => {
+    localStorage.setItem("sidebar-right", JSON.stringify(isRightOpen));
+  }, [isRightOpen]);
+
+  // Keyboard Shortcuts
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      // Command Palette
       if (e.key === "p" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((open) => !open);
+      }
+      
+      // Sidebar Toggles (Shift + Ctrl + Arrow)
+      if (e.shiftKey && (e.metaKey || e.ctrlKey)) {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          setIsLeftOpen((prev: boolean) => !prev);
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          setIsRightOpen((prev: boolean) => !prev);
+        }
       }
     };
     document.addEventListener("keydown", down);
@@ -82,13 +123,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="h-screen overflow-hidden bg-background flex font-sans text-foreground">
       
       {/* LEFT SIDEBAR: Navigation & Files */}
-      <aside className="w-64 border-r border-border bg-card/50 flex flex-col h-full flex-shrink-0">
-        <div className="p-4 flex items-center gap-3 border-b border-border/40 h-14">
+      <aside 
+        className={cn(
+          "border-r border-border bg-card/50 flex flex-col h-full flex-shrink-0 transition-all duration-300 ease-in-out relative",
+          isLeftOpen ? "w-64" : "w-0 border-r-0 opacity-0 overflow-hidden"
+        )}
+      >
+        <div className="p-4 flex items-center gap-3 border-b border-border/40 h-14 min-w-64">
            <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-serif font-bold">L</div>
            <span className="font-serif font-semibold tracking-tight">Life Principles</span>
+           <button 
+             onClick={() => setIsLeftOpen(false)}
+             className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
+           >
+             <PanelLeftClose className="w-4 h-4" />
+           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
+        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6 min-w-64">
            {/* Global Actions */}
            <div className="px-2 space-y-1">
               <button 
@@ -154,7 +206,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
            </div>
         </div>
         
-        <div className="p-4 border-t border-border/40 flex items-center gap-3">
+        <div className="p-4 border-t border-border/40 flex items-center gap-3 min-w-64">
              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
                 <User className="w-4 h-4 text-muted-foreground" />
              </div>
@@ -166,17 +218,56 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* CENTER: Main Content */}
-      <main className="flex-1 h-full overflow-y-auto bg-background relative flex flex-col items-center">
+      <main className="flex-1 h-full overflow-y-auto bg-background relative flex flex-col items-center transition-all duration-300">
+        
+        {/* Collapse Toggles (Visible when sidebars closed) */}
+        <div className="absolute top-4 left-4 z-10">
+           {!isLeftOpen && (
+             <button 
+               onClick={() => setIsLeftOpen(true)}
+               className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+               title="Expand Left Sidebar (Shift+Ctrl+Left)"
+             >
+               <PanelLeftOpen className="w-4 h-4" />
+             </button>
+           )}
+        </div>
+        <div className="absolute top-4 right-4 z-10">
+           {!isRightOpen && (
+             <button 
+               onClick={() => setIsRightOpen(true)}
+               className="p-2 rounded-md bg-card/80 border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+               title="Expand Right Sidebar (Shift+Ctrl+Right)"
+             >
+               <PanelRightOpen className="w-4 h-4" />
+             </button>
+           )}
+        </div>
+
         <div className="w-full max-w-3xl py-12 px-12 min-h-full">
           {children}
         </div>
       </main>
 
       {/* RIGHT SIDEBAR: Calendar & Tools */}
-      <aside className="w-72 border-l border-border bg-card/30 flex flex-col h-full flex-shrink-0 p-4 gap-6">
-        <div>
-           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Calendar</h3>
-           <div className="bg-background rounded-lg border border-border p-2 shadow-sm">
+      <aside 
+        className={cn(
+          "border-l border-border bg-card/30 flex flex-col h-full flex-shrink-0 transition-all duration-300 ease-in-out relative",
+          isRightOpen ? "w-72 p-4" : "w-0 p-0 border-l-0 opacity-0 overflow-hidden"
+        )}
+      >
+        <div className={cn("flex flex-col h-full gap-6 min-w-64", !isRightOpen && "hidden")}>
+            <div className="flex items-center justify-between">
+               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Calendar</h3>
+               <button 
+                 onClick={() => setIsRightOpen(false)}
+                 className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent/50"
+               >
+                 <PanelRightClose className="w-4 h-4" />
+               </button>
+            </div>
+            
+            <div className="bg-background rounded-lg border border-border p-2 shadow-sm">
               <DayPicker
                 mode="single"
                 showWeekNumber
@@ -205,10 +296,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 }}
               />
            </div>
-        </div>
-        
-        <div className="flex-1">
-            {/* Future Widgets Area (e.g. Timer, Stats) */}
+           
+           <div className="flex-1">
+                {/* Future Widgets Area */}
+           </div>
         </div>
       </aside>
 
