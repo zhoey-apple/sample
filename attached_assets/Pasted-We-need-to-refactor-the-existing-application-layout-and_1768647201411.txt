@@ -1,0 +1,184 @@
+We need to refactor the existing application layout and editor behavior.
+
+--------------------------------
+1. GLOBAL LAYOUT (THREE-COLUMN)
+--------------------------------
+
+Update the app layout to a fixed three-column structure:
+
+LEFT SIDEBAR:
+- Folder-style navigation
+- Displays plan files grouped by:
+  - Yearly
+  - Monthly
+  - Weekly
+  - Daily
+- Clicking an item opens the document
+
+CENTER PANEL (CORE):
+- Main editable content area
+- Always in EDIT MODE
+- Supports full text editing:
+  - Insert
+  - Delete
+  - Undo / Redo
+  - Cursor movement
+- This is NOT a read-only Markdown preview
+
+RIGHT SIDEBAR:
+- Calendar view
+- Displays:
+  - Month
+  - ISO week numbers
+  - Today highlighted
+- Clicking a date opens or creates that day's plan
+
+--------------------------------
+2. MARKDOWN EDITOR (CRITICAL FIX)
+--------------------------------
+
+Replace any static Markdown rendering with a REAL editable editor.
+
+Requirements:
+- Continuous editing (like Obsidian / Notion)
+- Supports:
+  - Markdown syntax
+  - Checkboxes
+  - Line breaks
+  - Undo / Redo
+- Tasks must remain editable after creation
+
+Do NOT:
+- Lock content after pressing Enter
+- Convert tasks into immutable UI components
+
+--------------------------------
+3. DAILY PLAN TEMPLATE (STRUCTURE)
+--------------------------------
+
+When a Daily Plan is created, initialize it with the following structure:
+
+Sections (in order):
+
+--- METADATA (SYSTEM ONLY, NOT USER EDITABLE) ---
+type: daily
+date: YYYY-MM-DD
+-----------------------------------------------
+
+## Monthly Direction
+[Embedded current month plan: "This month"]
+
+## Weekly Direction
+[Embedded current week focus: "This week"]
+
+## Daily Planner
+- Yesterday link
+- Embedded unfinished tasks from yesterday
+
+### Today's Tasks
+- [ ] 
+
+### Unfinished
+- [ ] 
+
+## Creative Thoughts
+
+## Habit Tracker (Widget, NOT raw markdown)
+- Max 2 habits per user
+- Clicking checkbox fills one day in a yearly heatmap
+- Habit definition can only be edited ONCE
+- Editing after first save requires confirmation dialog
+- After confirmation, habit becomes locked permanently
+
+## History On This Day
+- Automatically query previous years
+- Show Creative Thoughts from same MM-DD
+
+- Tomorrow link
+
+--------------------------------
+4. WEEKLY PLAN TEMPLATE
+--------------------------------
+
+Initialize weekly plans with:
+
+## Monthly Initiatives
+[Embedded current month: "This month"]
+
+## Last Week
+[Embedded previous week: "This week"]
+
+## This Week
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
+
+--------------------------------
+5. MONTHLY PLAN TEMPLATE
+--------------------------------
+
+Initialize monthly plans with:
+
+## Direction
+
+### My Core Principles
+[Embedded Life Principles]
+
+### Yearly OKRs
+[Embedded current year plan]
+
+## Last Month
+
+### Initiatives
+[Embedded previous month: "This month"]
+
+### Other Reflections
+- 
+
+## This Month
+- 
+
+--------------------------------
+6. YEARLY PLAN TEMPLATE
+--------------------------------
+
+Initialize yearly plans with:
+
+## Main Goal (ONLY ONE)
+### Goal:
+
+## Side Goals (MAX 5)
+### Goal:
+
+--------------------------------
+7. HABIT HEATMAP WIDGET
+--------------------------------
+
+Implement habit tracking as a widget, not markdown.
+
+Behavior:
+- One checkbox = one day colored
+- Show a full-year heatmap
+- Color intensity increases with consistency
+- Widget appears at bottom of Daily Plan
+- Data persists across days
+
+--------------------------------
+8. EMBEDDING RULES (IMPORTANT)
+--------------------------------
+
+Embedded blocks:
+- Must dynamically reference other plans
+- Must update automatically when source changes
+- Must not duplicate stored text
+
+--------------------------------
+9. CONSTRAINTS
+--------------------------------
+
+- Preserve existing data
+- Do not introduce social or AI features
+- Prioritize correctness over visual polish
+- Comment code where logic mirrors Obsidian behavior
