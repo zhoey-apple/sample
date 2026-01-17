@@ -3,7 +3,7 @@ import { useRoute } from "wouter";
 import { usePlans } from "@/hooks/use-plans";
 import { Layout } from "@/components/layout";
 import { format, parseISO, addDays, subDays, startOfISOWeek, endOfISOWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from "date-fns";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info, Trash2, History, Shuffle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
@@ -98,6 +98,42 @@ export default function DailyPlanPage() {
      }
      return null;
   }, [allPlans, type, dateObj]);
+
+
+  const historyPlan = useMemo(() => {
+     if (!allPlans || type !== 'day') return null;
+     // Find plan from same day and month but different year
+     const currentDayMonth = format(dateObj, "MM-dd");
+     const currentYear = format(dateObj, "yyyy");
+     
+     const matches = allPlans.filter(p => {
+         if (p.type !== 'day') return false;
+         const pDate = parseISO(p.date);
+         return format(pDate, "MM-dd") === currentDayMonth && format(pDate, "yyyy") !== currentYear;
+     });
+     
+     if (matches.length === 0) return null;
+     // Sort by year descending to show most recent
+     return matches.sort((a,b) => b.date.localeCompare(a.date))[0];
+  }, [allPlans, type, dateObj]);
+
+  const randomPastPlan = useMemo(() => {
+      if (!allPlans || type !== 'day') return null;
+      // Filter for past days, excluding today and history plan
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      
+      const candidates = allPlans.filter(p => {
+          if (p.type !== 'day') return false;
+          if (p.date >= todayStr) return false; // Must be past
+          if (historyPlan && p.id === historyPlan.id) return false; // Exclude if shown in history
+          return true;
+      });
+
+      if (candidates.length === 0) return null;
+      // Simple random selection
+      const randomIndex = Math.floor(Math.random() * candidates.length);
+      return candidates[randomIndex];
+  }, [allPlans, type, historyPlan]);
 
 
   if (isLoading || !plan || !principles) {
@@ -362,6 +398,61 @@ export default function DailyPlanPage() {
              {(principles.habitDefinitions?.length || 0) > 0 && (
                  <HabitHeatmap principles={principles} plans={allPlans || []} />
              )}
+
+            {/* HISTORY SECTIONS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-border/40 mt-8">
+                {/* On This Day */}
+                <div className="space-y-3 opacity-80 hover:opacity-100 transition-opacity">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <History className="w-3 h-3" />
+                        On This Day
+                    </h3>
+                    <div className="bg-muted/10 border border-border/40 rounded-lg p-4 min-h-[120px]">
+                        {historyPlan ? (
+                             <div className="space-y-2">
+                                <div className="text-[10px] text-muted-foreground uppercase font-medium">
+                                    {format(parseISO(historyPlan.date), "yyyy")}
+                                </div>
+                                <MarkdownEditor 
+                                    value={historyPlan.notes || "No notes recorded."} 
+                                    readOnly={true}
+                                    className="text-sm text-foreground/70 italic min-h-[60px]"
+                                />
+                             </div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground/50 italic flex items-center justify-center h-full min-h-[80px]">
+                                No history found for this date.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Random Past Day */}
+                <div className="space-y-3 opacity-80 hover:opacity-100 transition-opacity">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <Shuffle className="w-3 h-3" />
+                        Random Past Entry
+                    </h3>
+                    <div className="bg-muted/10 border border-border/40 rounded-lg p-4 min-h-[120px]">
+                        {randomPastPlan ? (
+                             <div className="space-y-2">
+                                <div className="text-[10px] text-muted-foreground uppercase font-medium">
+                                    {format(parseISO(randomPastPlan.date), "MMMM d, yyyy")}
+                                </div>
+                                <MarkdownEditor 
+                                    value={randomPastPlan.notes || "No notes recorded."} 
+                                    readOnly={true}
+                                    className="text-sm text-foreground/70 italic min-h-[60px]"
+                                />
+                             </div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground/50 italic flex items-center justify-center h-full min-h-[80px]">
+                                No past entries available.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </section>
         )}
       </div>

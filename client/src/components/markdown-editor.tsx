@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 interface MarkdownEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void; // Optional onChange for read-only
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
-export function MarkdownEditor({ value, onChange, placeholder, className }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange, placeholder, className, readOnly = false }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [internalValue, setInternalValue] = useState(value);
 
@@ -19,9 +20,10 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (readOnly) return;
     const newValue = e.target.value;
     setInternalValue(newValue);
-    onChange(newValue);
+    onChange?.(newValue);
     autoResize();
   };
 
@@ -38,6 +40,8 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
   }, [internalValue]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (readOnly) return;
+    
     // Simple list continuation logic
     if (e.key === 'Enter') {
       const textarea = textareaRef.current;
@@ -58,7 +62,7 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
         if (currentLine.trim() === listMatch[0].trim()) {
            const newValue = internalValue.substring(0, currentLineStart) + internalValue.substring(start);
            setInternalValue(newValue);
-           onChange(newValue);
+           onChange?.(newValue);
            // Need to defer cursor set
            setTimeout(() => {
              textarea.selectionStart = textarea.selectionEnd = currentLineStart;
@@ -78,7 +82,7 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
 
            const newValue = internalValue.substring(0, start) + '\n' + nextPrefix + internalValue.substring(end);
            setInternalValue(newValue);
-           onChange(newValue);
+           onChange?.(newValue);
            
            setTimeout(() => {
              textarea.selectionStart = textarea.selectionEnd = start + 1 + nextPrefix.length;
@@ -94,9 +98,11 @@ export function MarkdownEditor({ value, onChange, placeholder, className }: Mark
       value={internalValue}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      readOnly={readOnly}
       placeholder={placeholder}
       className={cn(
         "w-full resize-none border-none focus-visible:ring-0 bg-transparent p-0 text-base leading-relaxed font-mono text-foreground/90 min-h-[100px] overflow-hidden",
+        readOnly && "cursor-default text-muted-foreground select-text pointer-events-none",
         className
       )}
     />
