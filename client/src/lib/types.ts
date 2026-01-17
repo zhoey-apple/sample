@@ -10,6 +10,7 @@ export type Task = {
   id: string;
   text: string;
   completed: boolean;
+  indentLevel?: number;
 };
 
 export type Plan = {

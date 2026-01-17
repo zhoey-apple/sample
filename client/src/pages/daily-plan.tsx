@@ -156,8 +156,43 @@ export default function DailyPlanPage() {
     updatePlan.mutate({ planId: plan.id, updates: { [listKey]: list } });
   };
 
+  const handleUpdateTask = (taskId: string, updates: Partial<Task>) => {
+    const list = [...plan.tasks];
+    const taskIndex = list.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    list[taskIndex] = { ...list[taskIndex], ...updates };
+    updatePlan.mutate({ planId: plan.id, updates: { tasks: list } });
+  };
+
+  const handleTaskKeyDown = (e: React.KeyboardEvent, taskId: string) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const list = [...plan.tasks];
+      const index = list.findIndex(t => t.id === taskId);
+      if (index === -1) return;
+
+      const currentLevel = list[index].indentLevel || 0;
+      
+      if (e.shiftKey) {
+        // Outdent
+        if (currentLevel > 0) {
+           handleUpdateTask(taskId, { indentLevel: currentLevel - 1 });
+        }
+      } else {
+        // Indent
+        if (index > 0) {
+           const prevLevel = list[index - 1].indentLevel || 0;
+           // Max indent is prev + 1
+           if (currentLevel < prevLevel + 1) {
+             handleUpdateTask(taskId, { indentLevel: currentLevel + 1 });
+           }
+        }
+      }
+    }
+  };
+
   const handleAddTask = (text: string) => {
-    const newTask = { id: Math.random().toString(36).substr(2, 9), text, completed: false };
+    const newTask = { id: Math.random().toString(36).substr(2, 9), text, completed: false, indentLevel: 0 };
     updatePlan.mutate({ planId: plan.id, updates: { tasks: [...plan.tasks, newTask] } });
   };
 
@@ -293,17 +328,26 @@ export default function DailyPlanPage() {
           {/* Today's Tasks */}
           <div id="section-today" className="space-y-2 pl-1">
             {plan.tasks.map(task => (
-              <div key={task.id} className="flex items-start gap-3 group min-h-[28px]">
-                <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1.5 text-muted-foreground hover:text-primary transition-colors">
+              <div 
+                key={task.id} 
+                className="flex items-start gap-3 group min-h-[28px] transition-all"
+                style={{ marginLeft: `${(task.indentLevel || 0) * 1.5}rem` }}
+              >
+                <button onClick={() => handleTaskToggle(task.id, false)} className="mt-1.5 text-muted-foreground hover:text-primary transition-colors flex-shrink-0">
                   {task.completed ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Circle className="w-4 h-4" />}
                 </button>
-                <span className={cn(
-                    "text-base transition-all font-serif flex-1",
-                    task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground'
-                )}>{task.text}</span>
+                <Input
+                    value={task.text}
+                    onChange={(e) => handleUpdateTask(task.id, { text: e.target.value })}
+                    onKeyDown={(e) => handleTaskKeyDown(e, task.id)}
+                    className={cn(
+                        "border-none shadow-none focus-visible:ring-0 bg-transparent text-base p-0 h-auto font-serif flex-1 min-w-0 placeholder:text-muted-foreground/50",
+                        task.completed ? 'text-muted-foreground line-through decoration-muted-foreground/50' : 'text-foreground'
+                    )}
+                />
                 <button 
                     onClick={() => handleDeleteTask(task.id, false)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all p-1"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-all p-1 flex-shrink-0"
                     title="Delete task"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
