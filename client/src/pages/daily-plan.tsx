@@ -13,6 +13,7 @@ import { HabitHeatmap } from "@/components/habit-heatmap";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SectionTooltip } from "@/components/section-tooltip";
 
 export default function DailyPlanPage() {
   const [matchDay, paramsDay] = useRoute("/day/:date");
@@ -266,48 +267,75 @@ export default function DailyPlanPage() {
 
         {/* EMBEDDED CONTEXT (Top Section) */}
         {/* For Daily: Show Month Context */}
-        {type === 'day' && parentPlan && (
-            <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-                    Monthly Direction
-                </h2>
-                <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
-                     <MarkdownEditor 
-                        value={parentPlan.notes || ''} 
-                        onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
-                        placeholder="Set monthly direction..."
-                        className="min-h-[60px] text-sm italic opacity-80"
-                    />
-                </div>
-                <Link href={`/month/${parentPlan.date}`}>
-                    <a className="text-xs text-primary mt-2 inline-block hover:underline opacity-0 group-hover:opacity-100 transition-opacity">View Month Plan →</a>
-                </Link>
-            </section>
+        {type === 'day' && (
+            parentPlan ? (
+                <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
+                    <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                        Monthly Direction
+                        <SectionTooltip text="Align your day with your monthly goals. Edited in the Monthly Plan." />
+                    </h2>
+                    <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
+                         <MarkdownEditor 
+                            value={parentPlan.notes || ''} 
+                            onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
+                            placeholder="Set monthly direction..."
+                            className="min-h-[60px] text-sm italic opacity-80"
+                        />
+                    </div>
+                    <Link href={`/month/${parentPlan.date}`}>
+                        <a className="text-xs text-primary mt-2 inline-block hover:underline opacity-0 group-hover:opacity-100 transition-opacity">View Month Plan →</a>
+                    </Link>
+                </section>
+            ) : (
+                <section className="bg-muted/10 border border-dashed border-border/60 rounded-lg p-5 flex items-center justify-center text-center">
+                    <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground/60 italic">暂未创建对应的计划 (Monthly Plan not created)</p>
+                        <Link href={`/month/${format(startOfMonth(dateObj), "yyyy-MM-01")}`}>
+                            <a className="text-xs text-primary hover:underline">Create Monthly Plan</a>
+                        </Link>
+                    </div>
+                </section>
+            )
         )}
 
         {/* For Month: Show Year Context */}
-        {type === 'month' && parentPlan && (
-            <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-                    Yearly Goals
-                </h2>
-                <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
-                    <MarkdownEditor 
-                        value={parentPlan.notes || ''} 
-                        onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
-                        placeholder="Set yearly goals..."
-                        className="min-h-[60px] text-sm italic opacity-80"
-                    />
-                </div>
-            </section>
+        {type === 'month' && (
+            parentPlan ? (
+                <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
+                    <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                        Yearly Goals
+                        <SectionTooltip text="Align your month with your yearly vision. Edited in the Yearly Plan." />
+                    </h2>
+                    <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
+                        <MarkdownEditor 
+                            value={parentPlan.notes || ''} 
+                            onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
+                            placeholder="Set yearly goals..."
+                            className="min-h-[60px] text-sm italic opacity-80"
+                        />
+                    </div>
+                </section>
+            ) : (
+                <section className="bg-muted/10 border border-dashed border-border/60 rounded-lg p-5 flex items-center justify-center text-center">
+                    <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground/60 italic">暂未创建对应的计划 (Yearly Plan not created)</p>
+                        <Link href={`/year/${format(startOfYear(dateObj), "yyyy-01-01")}`}>
+                            <a className="text-xs text-primary hover:underline">Create Yearly Plan</a>
+                        </Link>
+                    </div>
+                </section>
+            )
         )}
 
         {/* TASK FLOW (Core) */}
         <section id="section-tasks" className="space-y-6">
           <div className="flex items-center justify-between border-b border-border/40 pb-2">
-             <h2 className="font-serif text-xl font-medium">Task Flow</h2>
+             <h2 className="font-serif text-xl font-medium flex items-center">
+                Task Flow
+                <SectionTooltip text="Your daily execution list. Use Tab to indent tasks." />
+             </h2>
              {previousDayPlan && previousDayPlan.tasks.filter(t => !t.completed).length > 0 && (
                  <span className="text-xs font-mono text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
                      {previousDayPlan.tasks.filter(t => !t.completed).length} from yesterday
@@ -393,8 +421,9 @@ export default function DailyPlanPage() {
 
         {/* EDITOR (Creative Thoughts / Notes) */}
         <section id="section-notes" className="space-y-4">
-          <h2 className="font-serif text-xl font-medium border-b border-border/40 pb-2">
+          <h2 className="font-serif text-xl font-medium border-b border-border/40 pb-2 flex items-center">
             {type === 'year' ? 'Goals & Vision' : type === 'month' ? 'Reflection & Initiatives' : 'Notes & Ideas'}
+            <SectionTooltip text="Free-form space for reflection, ideas, and detailed planning." />
           </h2>
           <MarkdownEditor 
             value={plan.notes || ''} 
@@ -408,7 +437,10 @@ export default function DailyPlanPage() {
          <section id="section-habits" className="space-y-4 pt-4">
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Habit Tracker</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                        Habit Tracker
+                        <SectionTooltip text="Track up to 2 key habits to build consistency." />
+                    </h2>
                     {(principles.habitDefinitions?.length || 0) < 2 && (
                          <Dialog open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
                             <DialogTrigger asChild>

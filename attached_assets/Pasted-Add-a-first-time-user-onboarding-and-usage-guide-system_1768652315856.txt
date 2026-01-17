@@ -1,0 +1,74 @@
+Add a first-time user onboarding and usage guide system.
+Do NOT remove existing features.
+Do NOT redesign the main editor layout.
+
+Requirements:
+
+1. First-Time Usage Detection:
+- Detect whether the user is opening the diary app for the first time.
+- Criteria:
+  - No existing yearly plan AND no core principles document.
+- If first-time usage is detected:
+  - Automatically display a usage guide page.
+- After onboarding is completed once:
+  - Do NOT show the guide again unless the user manually reopens it.
+
+2. Usage Guide Page:
+- Create a dedicated guide page (modal or full-page overlay).
+- Purpose:
+  - Explain how the diary system works.
+  - Explain the relationship between yearly / monthly / weekly / daily plans.
+
+3. Tooltip Help for Headings:
+- For every major section heading (e.g. Yearly Plan, Monthly Plan, This Week, Daily Tasks):
+  - Add a small “?” icon next to the heading.
+- Interaction:
+  - On mouse hover:
+    - Show a tooltip explaining the purpose of this section.
+  - Tooltip should:
+    - Be non-intrusive
+    - Auto-hide on mouse leave
+- Tooltips must work throughout the app, not only in the guide page.
+
+4. Guided Creation Flow:
+- During first-time onboarding, guide the user step-by-step:
+
+  Step 1:
+  - Prompt the user to create:
+    - Core Principles document
+    - Yearly Plan
+  - Provide a clear “Create Now” button.
+
+  Step 2:
+  - After Yearly Plan exists:
+    - Prompt creation of Monthly Plan.
+
+  Step 3:
+  - After Monthly Plan exists:
+    - Prompt creation of Weekly Plan.
+
+  Step 4:
+  - After Weekly Plan exists:
+    - Prompt creation of Daily Plan.
+
+- Users should not be forced, but clearly guided in this order.
+
+5. Missing Embedded Content Handling:
+- In daily / weekly / monthly pages:
+  - If an embedded document does NOT exist:
+    - Display placeholder text:
+      “暂未创建对应的计划”
+- Placeholder should:
+  - Be visually distinct (muted or italic)
+  - Be non-editable
+  - Disappear automatically once the corresponding document is created.
+
+6. Manual Access:
+- Add a menu item or command palette option:
+  - “Open Usage Guide”
+- This allows users to re-open the guide at any time.
+
+7. Persistence:
+- Once onboarding is completed:
+  - Store completion state locally.
+- The guide should NOT appear again on normal app startup.

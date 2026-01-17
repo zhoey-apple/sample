@@ -3,11 +3,11 @@ import { useAuth } from "../hooks/use-auth";
 import { format, getISOWeek, startOfISOWeek, parseISO } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft, Hash, CheckSquare, List, Trash2 } from "lucide-react";
+import { Book, LogOut, ChevronRight, ChevronDown, Folder, FileText, Search, User, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ChevronLeft, Hash, CheckSquare, List, Trash2, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlans } from "@/hooks/use-plans";
 import { useState, useEffect } from "react";
-import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Plan } from "@/lib/types";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -304,6 +304,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span>Principles</span>
                 </a>
               </Link>
+              <button 
+                  onClick={() => window.dispatchEvent(new Event("open-onboarding"))}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
+              >
+                  <HelpCircle className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span className="flex-1 text-left">Usage Guide</span>
+              </button>
            </div>
 
            {/* Folder Tree */}
@@ -503,6 +510,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <CommandItem onSelect={() => executeCommand('day')}>
               <FileText className="mr-2 h-4 w-4" />
               <span>Create / Open Day Plan</span>
+            </CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading="Help">
+            <CommandItem onSelect={() => {
+                setOpen(false);
+                window.dispatchEvent(new Event("open-onboarding"));
+            }}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>Open Usage Guide</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>

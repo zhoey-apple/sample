@@ -55,12 +55,15 @@ function Router() {
   );
 }
 
+import { OnboardingGuide } from "@/components/onboarding-guide";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router />
         <Toaster />
+        <OnboardingGuide />
       </AuthProvider>
     </QueryClientProvider>
   );
