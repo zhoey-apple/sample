@@ -1,5 +1,5 @@
 import { Plan, PlanType, Principles, Task, User } from "./types";
-import { format, addDays, subDays, parseISO, isSameDay } from "date-fns";
+import { format, addDays, subDays, parseISO, isSameDay, getISOWeek, startOfISOWeek, getYear, getMonth } from "date-fns";
 
 // Mock Data Store
 class MockStorage {
@@ -30,8 +30,6 @@ class MockStorage {
 
   // Auth
   async login(email: string): Promise<User | null> {
-    // Simple mock login - allow any email, create if new (or just return demo)
-    // For MVP strict scope: "email login only"
     let user = this.users.find(u => u.email === email);
     if (!user) {
       user = { id: Math.random().toString(36).substr(2, 9), email, name: email.split('@')[0] };
@@ -69,6 +67,10 @@ class MockStorage {
     return this.plans.find(p => p.userId === userId && p.date === date && p.type === type) || null;
   }
 
+  async getAllPlans(userId: string): Promise<Plan[]> {
+    return this.plans.filter(p => p.userId === userId);
+  }
+
   async createPlan(userId: string, date: string, type: PlanType): Promise<Plan> {
     // Inheritance Logic
     let unfinishedTasks: Task[] = [];
@@ -79,11 +81,20 @@ class MockStorage {
       const yesterdayPlan = this.plans.find(p => p.userId === userId && p.date === yesterday && p.type === 'day');
       
       if (yesterdayPlan) {
-        // Get tasks from yesterday that were NOT completed
         const pending = yesterdayPlan.tasks.filter(t => !t.completed);
         const inherited = yesterdayPlan.unfinishedTasks.filter(t => !t.completed);
         unfinishedTasks = [...pending, ...inherited].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
       }
+    } else if (type === 'week') {
+        // Week plan inheritance
+        const dateObj = parseISO(date);
+        const lastWeek = format(subDays(dateObj, 7), 'yyyy-MM-dd');
+        const lastWeekPlan = this.plans.find(p => p.userId === userId && p.date === lastWeek && p.type === 'week');
+        if (lastWeekPlan) {
+            const pending = lastWeekPlan.tasks.filter(t => !t.completed);
+            const inherited = lastWeekPlan.unfinishedTasks.filter(t => !t.completed);
+            unfinishedTasks = [...pending, ...inherited].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
+        }
     }
 
     const newPlan: Plan = {

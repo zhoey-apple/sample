@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DailyPlanPage from "@/pages/daily-plan";
 import PrinciplesPage from "@/pages/principles";
-import { format } from "date-fns";
+import { format, startOfISOWeek } from "date-fns";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
@@ -32,11 +32,20 @@ function Router() {
         {() => <ProtectedRoute component={PrinciplesPage} />}
       </Route>
       
+      {/* Route for all plan types */}
       <Route path="/day/:date">
         {() => <ProtectedRoute component={DailyPlanPage} />}
       </Route>
+      <Route path="/week/:date">
+        {() => <ProtectedRoute component={DailyPlanPage} />}
+      </Route>
+      <Route path="/month/:date">
+        {() => <ProtectedRoute component={DailyPlanPage} />}
+      </Route>
+      <Route path="/year/:date">
+        {() => <ProtectedRoute component={DailyPlanPage} />}
+      </Route>
       
-      {/* Root redirects to today's daily plan */}
       <Route path="/">
          {() => <Redirect to={`/day/${today}`} />}
       </Route>

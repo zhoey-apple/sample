@@ -1,0 +1,99 @@
+We already have a working MVP of "Life Principles Diary".
+Now apply the following modifications WITHOUT breaking existing logic.
+
+--------------------------------
+1. CALENDAR: ADD WEEK NUMBER (CRITICAL)
+--------------------------------
+
+Enhance the calendar view to display WEEK NUMBERS.
+
+Requirements:
+- Each row (week) in the monthly calendar must display its ISO week number
+- Week number should be visually aligned on the left side of the calendar grid
+- Week numbering must follow ISO-8601 standard
+- Week numbers are for reference only (non-clickable for now)
+
+Design principle:
+- Time awareness is more important than visual simplicity
+- Week number must be clearly readable but not dominant
+
+--------------------------------
+2. COMMAND PALETTE (CTRL + P)
+--------------------------------
+
+Add a global command palette triggered by:
+- Ctrl + P (Windows/Linux)
+- Cmd + P (Mac)
+
+Command palette behavior:
+- Opens an overlay input box
+- User can type to search commands
+
+Required commands (MVP only):
+- "Create / Open Year Plan"
+- "Create / Open Month Plan"
+- "Create / Open Week Plan"
+- "Create / Open Day Plan"
+
+Command logic:
+- If the selected plan for the current time already exists → open it
+- If it does not exist → create it automatically and open it
+
+Examples:
+- Selecting "Year Plan" opens the current year's plan
+- Selecting "Week Plan" opens the current ISO week plan
+
+Rules:
+- Do NOT ask the user to manually enter dates
+- Always infer date context automatically
+
+--------------------------------
+3. LEFT SIDEBAR: PLAN FILE TREE
+--------------------------------
+
+Add a left sidebar with a folder-style structure.
+
+Folder hierarchy (fixed, non-editable order):
+
+- Yearly
+  - All year plans (grouped by year)
+- Monthly
+  - All month plans (grouped by year)
+- Weekly
+  - All week plans (grouped by year)
+- Daily
+  - All daily plans (grouped by year / month)
+
+Behavior:
+- Clicking a plan opens it
+- Sidebar reflects ONLY existing plans
+- Sidebar is a navigation tool, not a content editor
+
+Design rules:
+- Folder names are fixed and cannot be renamed
+- No drag & drop in MVP
+- No deletion from sidebar (delete inside page only)
+
+--------------------------------
+4. ARCHITECTURE CONSTRAINTS
+--------------------------------
+
+- Do NOT duplicate data
+- Sidebar items must be generated from the same plan data model
+- Command palette actions must reuse existing creation logic
+- Calendar, sidebar, and command palette must stay in sync
+
+--------------------------------
+5. PRIORITY ORDER
+--------------------------------
+
+Implement in this order:
+1. Week number in calendar
+2. Sidebar folder navigation
+3. Command palette (Ctrl + P)
+
+Do NOT refactor unrelated code unless necessary.
+Leave UI styling minimal.
+Focus on correctness and consistency.
+
+Explain key implementation decisions in comments.
