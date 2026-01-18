@@ -18,6 +18,7 @@ const THEMES = [
 export function CoverSelection() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [isHoveringItem, setIsHoveringItem] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [mouseX, setMouseX] = useState(0);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -47,17 +48,17 @@ export function CoverSelection() {
       
       const container = scrollContainerRef.current;
       const threshold = windowWidth * 0.25; // 25% zone on each side
-      const maxSpeed = 15; // Max scroll speed px/frame
+      const maxSpeed = 12; // Adjusted speed for smoother feel
 
       // Scroll Left
       if (mouseX < threshold && mouseX > 0) {
-        const intensity = 1 - (mouseX / threshold);
+        const intensity = Math.pow(1 - (mouseX / threshold), 2); // Quadratic easing for more natural acceleration
         container.scrollLeft -= intensity * maxSpeed;
       }
       
       // Scroll Right
       if (mouseX > (windowWidth - threshold)) {
-        const intensity = (mouseX - (windowWidth - threshold)) / threshold;
+        const intensity = Math.pow((mouseX - (windowWidth - threshold)) / threshold, 2);
         container.scrollLeft += intensity * maxSpeed;
       }
 
@@ -88,23 +89,25 @@ export function CoverSelection() {
     localStorage.setItem("diary-theme", themeId);
     
     // Celebration!
-    const duration = 3000;
+    const duration = 3500;
     const end = Date.now() + duration;
 
     const frame = () => {
       confetti({
-        particleCount: 5,
+        particleCount: 8,
         angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: THEMES.find(t => t.id === themeId) ? [THEMES.find(t => t.id === themeId)!.color, '#ffffff'] : undefined
+        spread: 70,
+        origin: { x: 0.1, y: 0.8 },
+        colors: THEMES.find(t => t.id === themeId) ? [THEMES.find(t => t.id === themeId)!.color, '#ffffff', '#ffd700'] : undefined,
+        scalar: 1.2
       });
       confetti({
-        particleCount: 5,
+        particleCount: 8,
         angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: THEMES.find(t => t.id === themeId) ? [THEMES.find(t => t.id === themeId)!.color, '#ffffff'] : undefined
+        spread: 70,
+        origin: { x: 0.9, y: 0.8 },
+        colors: THEMES.find(t => t.id === themeId) ? [THEMES.find(t => t.id === themeId)!.color, '#ffffff', '#ffd700'] : undefined,
+        scalar: 1.2
       });
 
       if (Date.now() < end) {
@@ -117,7 +120,7 @@ export function CoverSelection() {
     setTimeout(() => {
       setIsOpen(false);
       window.dispatchEvent(new Event("check-onboarding"));
-    }, 2500);
+    }, 3000);
   };
 
   if (!isOpen && !selectedTheme) return null;
@@ -129,88 +132,153 @@ export function CoverSelection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-zinc-100 flex flex-col overflow-hidden cursor-none" // Hiding default cursor for immersion
+          className="fixed inset-0 z-[100] bg-zinc-50 flex flex-col overflow-hidden cursor-none"
           onMouseMove={handleMouseMove}
         >
-          {/* Custom Cursor Hint */}
-          <div 
-            className="pointer-events-none fixed z-50 w-8 h-8 rounded-full border border-black/20 bg-white/50 backdrop-blur shadow-sm flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
-            style={{ left: mouseX, top: '50%' }} // Just tracking X for the hint effectively
+          {/* Custom Cursor */}
+          <motion.div 
+            className="pointer-events-none fixed z-50 flex items-center justify-center mix-blend-difference"
+            style={{ left: mouseX, top: '50%' }}
+            animate={{ 
+              scale: isHoveringItem ? 2.5 : 1,
+              opacity: selectedTheme ? 0 : 1
+            }}
+            transition={{ type: "spring", stiffness: 500, damping: 28 }}
           >
-             <div className="w-1 h-1 bg-black rounded-full" />
-          </div>
+             <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+             {isHoveringItem && (
+               <motion.span 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute text-[6px] font-bold text-black uppercase tracking-widest pt-[1px]"
+               >
+                 Select
+               </motion.span>
+             )}
+          </motion.div>
 
           <div className="flex-1 relative flex flex-col justify-center">
-            <div className="text-center mb-12 space-y-2 pointer-events-none select-none z-10">
+            {/* Header Text */}
+            <div className="text-center mb-16 space-y-4 pointer-events-none select-none z-10 px-4">
                <motion.h2 
                  initial={{ opacity: 0, y: -20 }}
                  animate={{ opacity: 1, y: 0 }}
-                 className="text-xl md:text-2xl font-serif text-zinc-500 italic"
+                 transition={{ delay: 0.2 }}
+                 className="text-xl md:text-2xl font-serif text-zinc-400 italic"
                >
-                 Choose your companion for
+                 {selectedTheme ? "Your companion for" : "Choose your companion for"}
                </motion.h2>
-               <motion.h1 
-                  key={selectedTheme ? "year" : "prompt"}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={cn(
-                    "text-6xl md:text-9xl font-bold font-serif tracking-tighter transition-colors duration-500",
-                    selectedTheme ? "text-primary" : "text-zinc-900"
-                  )}
+               <motion.div
+                  className="relative h-24 md:h-32 flex items-center justify-center"
                >
-                  {selectedTheme ? currentYear : "The Journey"}
-               </motion.h1>
+                 {/* Year Transition */}
+                 <AnimatePresence mode="wait">
+                   {!selectedTheme ? (
+                      <motion.h1 
+                        key="title"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-6xl md:text-8xl font-bold font-serif tracking-tighter text-zinc-900"
+                      >
+                        The Journey
+                      </motion.h1>
+                   ) : (
+                      <motion.h1 
+                        key="year"
+                        initial={{ opacity: 0, scale: 0.5, rotateX: -90 }}
+                        animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                        transition={{ type: "spring", bounce: 0.5 }}
+                        className="text-7xl md:text-9xl font-bold font-serif tracking-tighter text-primary"
+                      >
+                        {currentYear}
+                      </motion.h1>
+                   )}
+                 </AnimatePresence>
+               </motion.div>
             </div>
 
             {/* Notebook Carousel */}
             <div 
               ref={scrollContainerRef}
-              className="flex items-center gap-16 px-[50vw] overflow-x-auto no-scrollbar py-20"
-              style={{ scrollBehavior: 'auto' }} // Manual JS scroll
+              className="flex items-center gap-12 md:gap-20 px-[50vw] overflow-x-auto no-scrollbar py-20 pb-32"
+              style={{ scrollBehavior: 'auto' }}
             >
               {THEMES.map((theme) => (
                 <motion.button
                   key={theme.id}
                   onClick={() => handleSelect(theme.id)}
+                  onMouseEnter={() => setIsHoveringItem(true)}
+                  onMouseLeave={() => setIsHoveringItem(false)}
                   whileHover={{ 
-                    scale: 1.1, 
-                    rotateY: -10,
-                    y: -20,
-                    transition: { type: "spring", stiffness: 300 } 
+                    scale: 1.05, 
+                    rotateY: -8,
+                    y: -15,
+                    transition: { type: "spring", stiffness: 400, damping: 20 } 
                   }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                   className={cn(
-                    "relative flex-shrink-0 w-64 h-96 rounded-r-2xl shadow-2xl transform-style-3d group perspective-1000 transition-all duration-500",
-                    selectedTheme === theme.id ? "ring-4 ring-offset-8 ring-primary z-20 scale-110" : "opacity-90 hover:opacity-100 hover:z-10"
+                    "relative flex-shrink-0 w-64 h-96 md:w-72 md:h-[420px] rounded-r-xl shadow-xl transform-style-3d group perspective-1000 transition-all duration-500",
+                    selectedTheme === theme.id ? "ring-0 z-20 scale-110 cursor-default" : "cursor-none"
                   )}
                   style={{ backgroundColor: theme.color }}
                 >
+                    {/* Realistic Book Shadow Layer */}
+                    <div className="absolute top-2 left-2 w-full h-full bg-black/10 rounded-r-xl blur-md -z-10 transition-transform duration-500 group-hover:translate-x-4 group-hover:translate-y-4" />
+
                     {/* Spine */}
-                    <div className="absolute top-0 left-0 w-8 h-full bg-black/20 mix-blend-multiply rounded-l-sm" />
+                    <div className="absolute top-0 left-0 w-6 h-full bg-black/10 mix-blend-multiply rounded-l-sm border-r border-black/5" />
                     
-                    {/* Texture */}
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')] opacity-10 mix-blend-overlay rounded-r-2xl" />
+                    {/* Texture Overlay */}
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')] opacity-15 mix-blend-overlay rounded-r-xl" />
                     
-                    {/* Lighting Gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10 rounded-r-2xl pointer-events-none" />
+                    {/* Lighting Gradient (Subtle sheen) */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/5 via-white/5 to-white/10 rounded-r-xl pointer-events-none" />
 
-                    {/* Elastic Band (Classic Moleskine/Notebook style) */}
-                    <div className="absolute top-0 right-8 w-3 h-full bg-black/20 shadow-sm" />
+                    {/* Elastic Band (Vertical) */}
+                    <div className="absolute top-0 right-6 w-3 h-full bg-black/20 shadow-sm mix-blend-multiply opacity-80" />
 
-                    {/* Label */}
-                    <div className="absolute bottom-12 left-12 right-12 h-24 bg-white/90 shadow-sm flex items-center justify-center backdrop-blur-sm transform group-hover:translate-x-1 transition-transform">
-                        <div className="border border-black/10 p-2 w-full h-full flex items-center justify-center">
-                            <span className="font-serif text-lg text-black/80">{theme.name}</span>
+                    {/* Minimalist Label (Muji Style Sticker) */}
+                    <div className="absolute top-12 left-0 w-full flex justify-center opacity-90">
+                        <div className="w-24 h-16 bg-[#f4f4f0] shadow-sm flex flex-col items-center justify-center gap-1 border border-zinc-200/50">
+                            <span className="font-serif text-xs text-zinc-500 tracking-widest uppercase">Diary</span>
+                            <div className="w-8 h-[1px] bg-zinc-300" />
+                            <span className="font-serif text-lg font-bold text-zinc-800">{theme.name}</span>
                         </div>
                     </div>
+
+                    {/* Selection Checkmark Overlay */}
+                    <AnimatePresence>
+                      {selectedTheme === theme.id && (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="absolute inset-0 z-30 flex items-center justify-center bg-black/10 backdrop-blur-[1px] rounded-r-xl"
+                        >
+                           <motion.div 
+                             initial={{ scale: 0, rotate: -45 }}
+                             animate={{ scale: 1, rotate: 0 }}
+                             transition={{ type: "spring" }}
+                             className="bg-white text-primary rounded-full p-4 shadow-2xl"
+                           >
+                              <div className="font-bold text-xl">Selected</div>
+                           </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                 </motion.button>
               ))}
             </div>
           </div>
           
-          <div className="h-20 flex items-center justify-center text-zinc-400 text-sm font-medium tracking-widest uppercase pointer-events-none">
-             {selectedTheme ? "Setting up your space..." : "Scroll to explore • Click to select"}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="h-24 flex items-center justify-center text-zinc-400 text-xs font-medium tracking-[0.2em] uppercase pointer-events-none pb-8"
+          >
+             {selectedTheme ? "Preparing your space..." : "Move cursor to explore"}
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
