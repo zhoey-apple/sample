@@ -4,8 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Lato', sans-serif;
   --font-serif: 'Lora', serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -43,42 +44,43 @@
 
 /* PAPER & INK THEME (Academic Minimalist) */
 :root {
-  /* Warm Paper White Background */
+  /* Warm Paper White Background (Slightly warmer off-white) */
   --background: 40 20% 97%; 
   /* Deep Ink Black Foreground */
-  --foreground: 220 10% 10%;
+  --foreground: 220 10% 15%;
 
   /* Slightly darker paper for cards */
   --card: 40 20% 95%;
-  --card-foreground: 220 10% 10%;
+  --card-foreground: 220 10% 15%;
 
   /* Popovers same as cards */
   --popover: 40 20% 95%;
-  --popover-foreground: 220 10% 10%;
+  --popover-foreground: 220 10% 15%;
 
   /* Primary Action: Deep Academic Blue */
+  /* Only 2 primary colors allowed. Using Blue as Primary. */
   --primary: 215 35% 30%;
   --primary-foreground: 40 20% 97%;
 
-  /* Secondary: Subtle Grey-Brown */
+  /* Secondary: Neutral Warm Grey (Not a distinct 'color' per se, blending with bg) */
   --secondary: 40 10% 90%;
-  --secondary-foreground: 220 10% 10%;
+  --secondary-foreground: 220 10% 15%;
 
-  /* Muted Text: Graphite */
+  /* Muted Text */
   --muted: 40 10% 90%;
   --muted-foreground: 220 10% 45%;
 
-  /* Accent: Muted Gold/Highlight */
-  --accent: 45 20% 90%;
+  /* Accent: Subtle Highlight */
+  --accent: 45 20% 92%;
   --accent-foreground: 215 35% 30%;
 
-  /* Destructive: Muted Red */
-  --destructive: 0 50% 40%;
+  /* Destructive: Keep Red for errors/destructive actions (standard UI need, but muted) */
+  --destructive: 0 40% 40%;
   --destructive-foreground: 40 20% 97%;
 
   /* Borders: Pencil Grey */
-  --border: 220 10% 85%;
-  --input: 220 10% 85%;
+  --border: 40 10% 85%;
+  --input: 40 10% 85%;
   --ring: 215 35% 30%;
 
   --radius: 0.25rem;
@@ -107,7 +109,7 @@
   --accent: 220 15% 20%;
   --accent-foreground: 40 20% 90%;
 
-  --destructive: 0 50% 40%;
+  --destructive: 0 40% 40%;
   --destructive-foreground: 40 20% 90%;
 
   --border: 220 15% 20%;
@@ -120,9 +122,13 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    /* Increased line-height for "slightly larger than productivity tools" */
+    @apply font-sans antialiased bg-background text-foreground leading-relaxed;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-medium tracking-tight;
+  }
+  code, pre {
+    @apply font-mono;
   }
 }

@@ -75,8 +75,12 @@ const FocusTracker = () => {
     return null;
 };
 
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useI18n } from "@/lib/i18n";
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [location, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -168,18 +172,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const outlineItems = [];
   if (activePlan) {
       if (activePlan.type === 'day') {
-          outlineItems.push({ id: 'direction', label: 'Monthly Direction', icon: Book, targetId: 'section-direction' });
-          outlineItems.push({ id: 'tasks', label: 'Task Flow', icon: List, targetId: 'section-tasks' });
+          outlineItems.push({ id: 'direction', label: t('direction'), icon: Book, targetId: 'section-direction' });
+          outlineItems.push({ id: 'tasks', label: t('task_flow'), icon: List, targetId: 'section-tasks' });
           
           // Add tasks to outline
           if (activePlan.unfinishedTasks?.length > 0) {
-              outlineItems.push({ id: 'unfinished', label: `Carried Over (${activePlan.unfinishedTasks.length})`, icon: CheckSquare, targetId: 'section-unfinished', nested: true });
+              outlineItems.push({ id: 'unfinished', label: `${t('carried_over')} (${activePlan.unfinishedTasks.length})`, icon: CheckSquare, targetId: 'section-unfinished', nested: true });
           }
           if (activePlan.tasks?.length > 0) {
-              outlineItems.push({ id: 'today', label: `Today's Tasks (${activePlan.tasks.length})`, icon: CheckSquare, targetId: 'section-today', nested: true });
+              outlineItems.push({ id: 'today', label: `${t('today_tasks')} (${activePlan.tasks.length})`, icon: CheckSquare, targetId: 'section-today', nested: true });
           }
 
-          outlineItems.push({ id: 'notes', label: 'Creative Thoughts', icon: FileText, targetId: 'section-notes' });
+          outlineItems.push({ id: 'notes', label: t('creative_thoughts'), icon: FileText, targetId: 'section-notes' });
           
           // Parse headings from notes
           if (activePlan.notes) {
@@ -198,10 +202,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
               });
           }
           
-          outlineItems.push({ id: 'habits', label: 'Habit Tracker', icon: CheckSquare, targetId: 'section-habits' });
+          outlineItems.push({ id: 'habits', label: t('habit_tracker'), icon: CheckSquare, targetId: 'section-habits' });
       } else {
           // Generic outline for other plan types
-          outlineItems.push({ id: 'notes', label: 'Notes & Goals', icon: FileText, targetId: 'section-notes' });
+          outlineItems.push({ id: 'notes', label: t('notes_goals'), icon: FileText, targetId: 'section-notes' });
       }
   }
 
@@ -363,17 +367,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6 min-w-64">
            {/* Global Actions */}
            <div className="px-2 space-y-1">
-              <SidebarIcon tooltip="Search / Commands" shortcut="⌘P">
+              <SidebarIcon tooltip={t("search")} shortcut="⌘P">
                 <button 
                     onClick={() => setOpen(true)}
                     className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
                 >
                     <Search className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                    <span className="flex-1 text-left">Search</span>
+                    <span className="flex-1 text-left">{t("search")}</span>
                     <kbd className="text-[10px] bg-muted/50 px-1 rounded opacity-70">⌘P</kbd>
                 </button>
               </SidebarIcon>
-              <SidebarIcon tooltip="View Principles" shortcut="">
+              <SidebarIcon tooltip={t("principles")} shortcut="">
                 <Link href="/principles">
                   <a className={cn(
                     "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors w-full group",
@@ -382,17 +386,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   )}>
                     <Book className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                    <span>Principles</span>
+                    <span>{t("principles")}</span>
                   </a>
                 </Link>
               </SidebarIcon>
-              <SidebarIcon tooltip="Open Onboarding Guide" shortcut="">
+              <SidebarIcon tooltip={t("usage_guide")} shortcut="">
                 <button 
                     onClick={() => window.dispatchEvent(new Event("open-onboarding"))}
                     className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all group"
                 >
                     <HelpCircle className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                    <span className="flex-1 text-left">Usage Guide</span>
+                    <span className="flex-1 text-left">{t("usage_guide")}</span>
                 </button>
               </SidebarIcon>
            </div>
@@ -406,7 +410,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           className="w-full flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                       >
                           {expanded[type] ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                          <span className="ml-1">{type}</span>
+                          <span className="ml-1">{t(type)}</span>
                       </button>
                       
                       {expanded[type] && (
@@ -439,13 +443,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                                             className="text-destructive focus:text-destructive"
                                         >
                                             <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete
+                                            {t("delete")}
                                         </ContextMenuItem>
                                     </ContextMenuContent>
                                   </ContextMenu>
                               ))}
                               {groupedPlans[type].length === 0 && (
-                                  <div className="px-2 py-1 text-xs text-muted-foreground/50 italic pl-6">Empty</div>
+                                  <div className="px-2 py-1 text-xs text-muted-foreground/50 italic pl-6">{t("empty")}</div>
                               )}
                           </div>
                       )}
@@ -460,8 +464,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
              </div>
              <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{user?.name || 'User'}</div>
-                <button onClick={logout} className="text-xs text-muted-foreground hover:text-destructive transition-colors">Sign Out</button>
+                <button onClick={logout} className="text-xs text-muted-foreground hover:text-destructive transition-colors">{t("sign_out")}</button>
              </div>
+             <LanguageSwitcher />
         </div>
       </aside>
 

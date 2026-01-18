@@ -57,16 +57,19 @@ function Router() {
 
 import { OnboardingGuide } from "@/components/onboarding-guide";
 import { CoverSelection } from "@/components/cover-selection";
+import { I18nProvider } from "@/lib/i18n";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-        <CoverSelection />
-        <OnboardingGuide />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+          <CoverSelection />
+          <OnboardingGuide />
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
