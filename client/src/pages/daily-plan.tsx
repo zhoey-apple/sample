@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SectionTooltip } from "@/components/section-tooltip";
+import { SectionPrompts } from "@/components/section-prompts";
 
 export default function DailyPlanPage() {
   const [matchDay, paramsDay] = useRoute("/day/:date");
@@ -425,6 +426,9 @@ export default function DailyPlanPage() {
             {type === 'year' ? 'Goals & Vision' : type === 'month' ? 'Reflection & Initiatives' : 'Notes & Ideas'}
             <SectionTooltip text="Free-form space for reflection, ideas, and detailed planning." />
           </h2>
+          
+          <SectionPrompts type={type} />
+          
           <MarkdownEditor 
             value={plan.notes || ''} 
             onChange={(val) => handleUpdateNotes(val)} 
