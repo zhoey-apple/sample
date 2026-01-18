@@ -18,12 +18,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Check local storage for session
-    const savedUser = localStorage.getItem("session_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    // Check with backend for existing session
+    const checkSession = async () => {
+      try {
+        const currentUser = await storage.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkSession();
   }, []);
 
   const login = async (email: string) => {
@@ -32,18 +41,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = await storage.login(email);
       if (user) {
         setUser(user);
-        localStorage.setItem("session_user", JSON.stringify(user));
         setLocation("/"); // Redirect to home after login
       }
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("session_user");
-    setLocation("/login");
+  const logout = async () => {
+    try {
+      await storage.logout();
+      setUser(null);
+      setLocation("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still clear local state even if API call fails
+      setUser(null);
+      setLocation("/login");
+    }
   };
 
   return (

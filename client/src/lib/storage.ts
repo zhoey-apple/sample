@@ -1,143 +1,95 @@
 import { Plan, PlanType, Principles, Task, User, HabitDefinition } from "./types";
 import { format, addDays, subDays, parseISO, isSameDay, getISOWeek, startOfISOWeek, getYear, getMonth } from "date-fns";
 
-// Mock Data Store
-class MockStorage {
-  private users: User[] = [
-    { id: "1", email: "demo@example.com", name: "Demo User" }
-  ];
-  
-  private plans: Plan[] = [];
-  private principles: Principles[] = [];
-  
-  constructor() {
-    // Load from localStorage if available to persist across reloads for the user
-    if (typeof window !== "undefined") {
-      const savedPlans = localStorage.getItem("plans");
-      const savedPrinciples = localStorage.getItem("principles");
-      
-      if (savedPlans) this.plans = JSON.parse(savedPlans);
-      if (savedPrinciples) this.principles = JSON.parse(savedPrinciples);
-    }
-  }
+// API client for backend communication
+class APIStorage {
+  private async fetch(url: string, options?: RequestInit) {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      credentials: 'include', // Important for session cookies
+    });
 
-  private save() {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("plans", JSON.stringify(this.plans));
-      localStorage.setItem("principles", JSON.stringify(this.principles));
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || `HTTP ${response.status}`);
     }
+
+    return response.json();
   }
 
   // Auth
   async login(email: string): Promise<User | null> {
-    let user = this.users.find(u => u.email === email);
-    if (!user) {
-      user = { id: Math.random().toString(36).substr(2, 9), email, name: email.split('@')[0] };
-      this.users.push(user);
+    const data = await this.fetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    return data.user;
+  }
+
+  async logout(): Promise<void> {
+    await this.fetch('/api/auth/logout', { method: 'POST' });
+  }
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const data = await this.fetch('/api/auth/me');
+      return data.user;
+    } catch {
+      return null;
     }
-    return user;
   }
 
   // Principles
   async getPrinciples(userId: string): Promise<Principles> {
-    let p = this.principles.find(p => p.userId === userId);
-    if (!p) {
-      p = {
-        id: Math.random().toString(36).substr(2, 9),
-        userId,
-        content: "# My Life Principles\n\n1. Be honest.\n2. Create value.\n3. Stay curious.",
-        habitDefinitions: [],
-        updatedAt: new Date().toISOString()
-      };
-      this.principles.push(p);
-      this.save();
-    } else if (!p.habitDefinitions) {
-      // Migration for existing data
-      p.habitDefinitions = [];
-      this.save();
-    }
-    return p;
+    return await this.fetch('/api/principles');
   }
 
   async updatePrinciples(userId: string, updates: Partial<Principles>): Promise<Principles> {
-    const p = await this.getPrinciples(userId);
-    Object.assign(p, updates);
-    p.updatedAt = new Date().toISOString();
-    this.save();
-    return p;
+    return await this.fetch('/api/principles', {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
   }
 
   // Plans
   async getPlan(userId: string, date: string, type: PlanType): Promise<Plan | null> {
-    return this.plans.find(p => p.userId === userId && p.date === date && p.type === type) || null;
+    try {
+      return await this.fetch(`/api/plans/${type}/${date}`);
+    } catch {
+      return null;
+    }
   }
 
   async getAllPlans(userId: string): Promise<Plan[]> {
-    return this.plans.filter(p => p.userId === userId);
+    return await this.fetch('/api/plans');
   }
 
   async createPlan(userId: string, date: string, type: PlanType): Promise<Plan> {
-    // Inheritance Logic
-    let unfinishedTasks: Task[] = [];
-    
-    // For daily plans, we no longer copy unfinished tasks. 
-    // They are now referenced dynamically in the UI.
-    if (type === 'day') {
-       // logic removed as per new requirement
-    } else if (type === 'week') {
-        // Week plan inheritance
-        const dateObj = parseISO(date);
-        const lastWeek = format(subDays(dateObj, 7), 'yyyy-MM-dd');
-        const lastWeekPlan = this.plans.find(p => p.userId === userId && p.date === lastWeek && p.type === 'week');
-        if (lastWeekPlan) {
-            const pending = lastWeekPlan.tasks.filter(t => !t.completed);
-            const inherited = lastWeekPlan.unfinishedTasks.filter(t => !t.completed);
-            unfinishedTasks = [...inherited, ...pending].map(t => ({ ...t, id: Math.random().toString(36).substr(2, 9) }));
-        }
-    }
-
-    const newPlan: Plan = {
-      id: Math.random().toString(36).substr(2, 9),
-      userId,
-      type,
-      date,
-      tasks: [],
-      unfinishedTasks,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      habits: {},
-      notes: '',
-      direction: ''
-    };
-    
-    this.plans.push(newPlan);
-    this.save();
-    return newPlan;
+    // The backend automatically creates plans if they don't exist, so we can just fetch
+    return await this.fetch(`/api/plans/${type}/${date}`);
   }
   
   async getOrCreatePlan(userId: string, date: string, type: PlanType): Promise<Plan> {
-    const existing = await this.getPlan(userId, date, type);
-    if (existing) return existing;
-    return this.createPlan(userId, date, type);
+    // Backend auto-creates if missing
+    return await this.fetch(`/api/plans/${type}/${date}`);
   }
 
   async updatePlan(userId: string, planId: string, updates: Partial<Plan>): Promise<Plan> {
-    const plan = this.plans.find(p => p.id === planId && p.userId === userId);
-    if (!plan) throw new Error("Plan not found");
-    
-    Object.assign(plan, updates);
-    plan.updatedAt = new Date().toISOString();
-    this.save();
-    return plan;
+    return await this.fetch(`/api/plans/${planId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
   }
 
   async deletePlan(userId: string, planId: string): Promise<void> {
-    const index = this.plans.findIndex(p => p.id === planId && p.userId === userId);
-    if (index !== -1) {
-      this.plans.splice(index, 1);
-      this.save();
-    }
+    await this.fetch(`/api/plans/${planId}`, {
+      method: 'DELETE',
+    });
   }
 }
 
-export const storage = new MockStorage();
+export const storage = new APIStorage();
