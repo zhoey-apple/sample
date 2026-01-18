@@ -131,7 +131,8 @@ export function CoverSelection() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 0, scale: 1.5, filter: "blur(10px)" }} // Fade-through animation
+          transition={{ duration: 1.5, ease: "easeInOut" }}
           className="fixed inset-0 z-[100] bg-zinc-50 flex flex-col overflow-hidden cursor-none"
           onMouseMove={handleMouseMove}
         >
@@ -163,6 +164,7 @@ export function CoverSelection() {
                <motion.h2 
                  initial={{ opacity: 0, y: -20 }}
                  animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0 }}
                  transition={{ delay: 0.2 }}
                  className="text-xl md:text-2xl font-serif text-zinc-400 italic"
                >
@@ -188,6 +190,7 @@ export function CoverSelection() {
                         key="year"
                         initial={{ opacity: 0, scale: 0.5, rotateX: -90 }}
                         animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
                         transition={{ type: "spring", bounce: 0.5 }}
                         className="text-7xl md:text-9xl font-bold font-serif tracking-tighter text-primary"
                       >
@@ -217,9 +220,20 @@ export function CoverSelection() {
                     transition: { type: "spring", stiffness: 400, damping: 20 } 
                   }}
                   whileTap={{ scale: 0.98 }}
+                  // Book opening animation
+                  animate={selectedTheme === theme.id ? {
+                      scale: 3,
+                      rotateY: -10,
+                      x: 0,
+                      zIndex: 50,
+                      transition: { duration: 1.5, ease: "easeInOut" }
+                  } : {}}
+                  exit={selectedTheme === theme.id ? {
+                     opacity: 0
+                  } : { opacity: 0 }}
                   className={cn(
                     "relative flex-shrink-0 w-64 h-96 md:w-72 md:h-[420px] rounded-r-xl shadow-xl transform-style-3d group perspective-1000 transition-all duration-500",
-                    selectedTheme === theme.id ? "ring-0 z-20 scale-110 cursor-default" : "cursor-none"
+                    selectedTheme === theme.id ? "ring-0 z-20 cursor-default" : "cursor-none"
                   )}
                   style={{ backgroundColor: theme.color }}
                 >
@@ -253,11 +267,13 @@ export function CoverSelection() {
                         <motion.div 
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
                           className="absolute inset-0 z-30 flex items-center justify-center bg-black/10 backdrop-blur-[1px] rounded-r-xl"
                         >
                            <motion.div 
                              initial={{ scale: 0, rotate: -45 }}
                              animate={{ scale: 1, rotate: 0 }}
+                             exit={{ scale: 0 }}
                              transition={{ type: "spring" }}
                              className="bg-white text-primary rounded-full p-4 shadow-2xl"
                            >
@@ -274,6 +290,7 @@ export function CoverSelection() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ delay: 1 }}
             className="h-24 flex items-center justify-center text-zinc-400 text-xs font-medium tracking-[0.2em] uppercase pointer-events-none pb-8"
           >

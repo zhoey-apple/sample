@@ -62,6 +62,19 @@ const SidebarIcon = ({
   </Tooltip>
 );
 
+// Helper for Focus Tracking
+const FocusTracker = () => {
+    useEffect(() => {
+        const handleMove = (e: MouseEvent) => {
+            document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
+            document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
+        };
+        window.addEventListener("mousemove", handleMove);
+        return () => window.removeEventListener("mousemove", handleMove);
+    }, []);
+    return null;
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -459,7 +472,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
           // On desktop, flex-1 takes remaining space.
           isMobile ? "w-full" : ""
       )}>
-        
+        {/* Cursor Spotlight Overlay */}
+        <div 
+          className="pointer-events-none fixed inset-0 z-0 opacity-0 transition-opacity duration-1000"
+          style={{
+            background: "radial-gradient(circle 600px at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 0%, rgba(255,255,255,0.03) 100%)",
+            opacity: 1
+          }}
+        />
+
+        {/* Global Focus Tracking */}
+        <FocusTracker />
+
         {/* Collapse Toggles (Visible when sidebars closed) */}
         <div className="absolute top-4 left-4 z-10">
            {(!isLeftOpen || isMobile) && ( // On mobile, toggle is always visible if sidebar is closed (or even if open? No, if open sidebar overlays it)
