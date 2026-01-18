@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const { login, isLoading } = useAuth();
+  const { t } = useI18n();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,22 +19,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] p-4 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md shadow-xl border-border/50 bg-white/50 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4 pb-8">
           <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
             <span className="text-primary-foreground font-serif text-2xl font-bold">L</span>
           </div>
-          <CardTitle className="font-serif text-3xl font-medium">Life Principles Diary</CardTitle>
+          <CardTitle className="font-serif text-3xl font-medium">{t("login_title")}</CardTitle>
           <CardDescription className="text-base">
-            A structured system for continuity and growth.
+            {t("login_subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Email Address
+                {t("email_label")}
               </label>
               <Input
                 id="email"
@@ -49,11 +55,11 @@ export default function LoginPage() {
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
-              Enter Diary
+              {t("enter_diary")}
             </Button>
             
             <p className="text-xs text-center text-muted-foreground pt-4">
-              Simple email login. No password required for this MVP.
+              {t("login_footer")}
             </p>
           </form>
         </CardContent>

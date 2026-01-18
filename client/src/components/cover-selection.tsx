@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
+import { useI18n } from "@/lib/i18n";
 
 const THEMES = [
   { id: "classic-blue", name: "Classic Blue", color: "#2c3e50", primary: "215 35% 30%" },
@@ -24,6 +25,7 @@ export function CoverSelection() {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const requestRef = useRef<number>(0);
   const currentYear = new Date().getFullYear();
+  const { t } = useI18n();
 
   useEffect(() => {
     // Check if theme is already set
@@ -153,7 +155,7 @@ export function CoverSelection() {
                 animate={{ opacity: 1 }}
                 className="absolute text-[6px] font-bold text-black uppercase tracking-widest pt-[1px]"
                >
-                 Select
+                 {t("select")}
                </motion.span>
              )}
           </motion.div>
@@ -168,7 +170,7 @@ export function CoverSelection() {
                  transition={{ delay: 0.2 }}
                  className="text-xl md:text-2xl font-serif text-zinc-400 italic"
                >
-                 {selectedTheme ? "Your companion for" : "Choose your companion for"}
+                 {selectedTheme ? t("your_companion") : t("choose_companion")}
                </motion.h2>
                <motion.div
                   className="relative h-24 md:h-32 flex items-center justify-center"
@@ -183,7 +185,7 @@ export function CoverSelection() {
                         exit={{ opacity: 0, y: -20 }}
                         className="text-6xl md:text-8xl font-bold font-serif tracking-tighter text-zinc-900"
                       >
-                        The Journey
+                        {t("the_journey")}
                       </motion.h1>
                    ) : (
                       <motion.h1 
@@ -255,7 +257,7 @@ export function CoverSelection() {
                     {/* Minimalist Label (Muji Style Sticker) */}
                     <div className="absolute top-12 left-0 w-full flex justify-center opacity-90">
                         <div className="w-24 h-16 bg-[#f4f4f0] shadow-sm flex flex-col items-center justify-center gap-1 border border-zinc-200/50">
-                            <span className="font-serif text-xs text-zinc-500 tracking-widest uppercase">Diary</span>
+                            <span className="font-serif text-xs text-zinc-500 tracking-widest uppercase">{t("diary")}</span>
                             <div className="w-8 h-[1px] bg-zinc-300" />
                             <span className="font-serif text-lg font-bold text-zinc-800">{theme.name}</span>
                         </div>
@@ -277,7 +279,7 @@ export function CoverSelection() {
                              transition={{ type: "spring" }}
                              className="bg-white text-primary rounded-full p-4 shadow-2xl"
                            >
-                              <div className="font-bold text-xl">Selected</div>
+                              <div className="font-bold text-xl">{t("selected")}</div>
                            </motion.div>
                         </motion.div>
                       )}
@@ -294,7 +296,7 @@ export function CoverSelection() {
             transition={{ delay: 1 }}
             className="h-24 flex items-center justify-center text-zinc-400 text-xs font-medium tracking-[0.2em] uppercase pointer-events-none pb-8"
           >
-             {selectedTheme ? "Preparing your space..." : "Move cursor to explore"}
+             {selectedTheme ? t("preparing_space") : t("explore_cursor")}
           </motion.div>
         </motion.div>
       )}

@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Loader2, Plus, Info, T
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { PlanType, Plan } from "@/lib/types";
+import { PlanType, Plan, Task } from "@/lib/types";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { HabitHeatmap } from "@/components/habit-heatmap";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,12 +15,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SectionTooltip } from "@/components/section-tooltip";
 import { SectionPrompts } from "@/components/section-prompts";
+import { useI18n } from "@/lib/i18n";
 
 export default function DailyPlanPage() {
   const [matchDay, paramsDay] = useRoute("/day/:date");
   const [matchWeek, paramsWeek] = useRoute("/week/:date");
   const [matchMonth, paramsMonth] = useRoute("/month/:date");
   const [matchYear, paramsYear] = useRoute("/year/:date");
+  const { t } = useI18n();
 
   let type: PlanType = 'day';
   let dateStr = "";
@@ -61,7 +63,7 @@ export default function DailyPlanPage() {
     prevDate = format(subDays(startOfYear(dateObj), 1), "yyyy-01-01");
     nextDate = format(addDays(endOfYear(dateObj), 1), "yyyy-01-01");
     title = format(dateObj, "yyyy");
-    subtitle = "Annual Plan";
+    subtitle = t("annual_plan");
   }
 
   // Embedding / Reference Logic (Simulated for MVP)
@@ -259,7 +261,7 @@ export default function DailyPlanPage() {
 
                 <Link href={`/day/${prevDate}`}>
                     <a className="flex flex-col items-center gap-1 bg-background px-2 z-10 group transition-all hover:text-primary hover:scale-105">
-                        <span className="text-[10px] uppercase tracking-widest opacity-60">Yesterday</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-60">{t("yesterday")}</span>
                         <div className="flex items-center gap-1 group-hover:-translate-x-1 transition-transform">
                             <ChevronLeft className="w-3 h-3" />
                             <span className="font-serif">{format(parseISO(prevDate), "MMM d")}</span>
@@ -268,12 +270,12 @@ export default function DailyPlanPage() {
                 </Link>
 
                 <div className="flex flex-col items-center gap-1 bg-background px-4 z-10 scale-110 text-primary border border-border/50 rounded-full py-1 shadow-sm">
-                    <span className="text-[10px] uppercase tracking-widest font-bold">Today</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold">{t("today")}</span>
                 </div>
 
                 <Link href={`/day/${nextDate}`}>
                     <a className="flex flex-col items-center gap-1 bg-background px-2 z-10 group transition-all hover:text-primary hover:scale-105">
-                        <span className="text-[10px] uppercase tracking-widest opacity-60">Tomorrow</span>
+                        <span className="text-[10px] uppercase tracking-widest opacity-60">{t("tomorrow")}</span>
                         <div className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                             <span className="font-serif">{format(parseISO(nextDate), "MMM d")}</span>
                             <ChevronRight className="w-3 h-3" />
@@ -313,27 +315,27 @@ export default function DailyPlanPage() {
                 <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                     <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-                        Monthly Direction
-                        <SectionTooltip text="Align your day with your monthly goals. Edited in the Monthly Plan." />
+                        {t("monthly_direction")}
+                        <SectionTooltip text={t("tooltip_monthly_direction")} />
                     </h2>
                     <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
                          <MarkdownEditor 
                             value={parentPlan.notes || ''} 
                             onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
-                            placeholder="Set monthly direction..."
+                            placeholder={t("set_monthly_direction")}
                             className="min-h-[60px] text-sm italic opacity-80"
                         />
                     </div>
                     <Link href={`/month/${parentPlan.date}`}>
-                        <a className="text-xs text-primary mt-2 inline-block hover:underline opacity-0 group-hover:opacity-100 transition-opacity">View Month Plan →</a>
+                        <a className="text-xs text-primary mt-2 inline-block hover:underline opacity-0 group-hover:opacity-100 transition-opacity">{t("view_month_plan")} →</a>
                     </Link>
                 </section>
             ) : (
                 <section className="bg-muted/10 border border-dashed border-border/60 rounded-lg p-5 flex items-center justify-center text-center">
                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground/60 italic">暂未创建对应的计划 (Monthly Plan not created)</p>
+                        <p className="text-sm text-muted-foreground/60 italic">{t("plan_not_created")}</p>
                         <Link href={`/month/${format(startOfMonth(dateObj), "yyyy-MM-01")}`}>
-                            <a className="text-xs text-primary hover:underline">Create Monthly Plan</a>
+                            <a className="text-xs text-primary hover:underline">{t("create_month_plan")}</a>
                         </Link>
                     </div>
                 </section>
@@ -346,14 +348,14 @@ export default function DailyPlanPage() {
                 <section id="section-direction" className="bg-muted/20 border border-border/40 rounded-lg p-5 group transition-colors hover:bg-muted/30">
                     <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-                        Yearly Goals
-                        <SectionTooltip text="Align your month with your yearly vision. Edited in the Yearly Plan." />
+                        {t("yearly_goals")}
+                        <SectionTooltip text={t("tooltip_yearly_goals")} />
                     </h2>
                     <div className="text-sm text-foreground/80 font-serif leading-relaxed line-clamp-3 opacity-80 italic">
                         <MarkdownEditor 
                             value={parentPlan.notes || ''} 
                             onChange={(val) => updatePlan.mutate({ planId: parentPlan.id, updates: { notes: val } })}
-                            placeholder="Set yearly goals..."
+                            placeholder={t("set_yearly_goals")}
                             className="min-h-[60px] text-sm italic opacity-80"
                         />
                     </div>
@@ -361,9 +363,9 @@ export default function DailyPlanPage() {
             ) : (
                 <section className="bg-muted/10 border border-dashed border-border/60 rounded-lg p-5 flex items-center justify-center text-center">
                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground/60 italic">暂未创建对应的计划 (Yearly Plan not created)</p>
+                        <p className="text-sm text-muted-foreground/60 italic">{t("plan_not_created")}</p>
                         <Link href={`/year/${format(startOfYear(dateObj), "yyyy-01-01")}`}>
-                            <a className="text-xs text-primary hover:underline">Create Yearly Plan</a>
+                            <a className="text-xs text-primary hover:underline">{t("create_year_plan")}</a>
                         </Link>
                     </div>
                 </section>
@@ -374,12 +376,12 @@ export default function DailyPlanPage() {
         <section id="section-tasks" className="space-y-6">
           <div className="flex items-center justify-between border-b border-border/40 pb-2">
              <h2 className="font-serif text-xl font-medium flex items-center">
-                Task Flow
-                <SectionTooltip text="Your daily execution list. Use Tab to indent tasks." />
+                {t("task_flow")}
+                <SectionTooltip text={t("tooltip_task_flow")} />
              </h2>
              {previousDayPlan && previousDayPlan.tasks.filter(t => !t.completed).length > 0 && (
                  <span className="text-xs font-mono text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
-                     {previousDayPlan.tasks.filter(t => !t.completed).length} from yesterday
+                     {previousDayPlan.tasks.filter(t => !t.completed).length} {t("from_yesterday")}
                  </span>
              )}
           </div>
@@ -389,7 +391,7 @@ export default function DailyPlanPage() {
             <div id="section-unfinished" className="space-y-3 pl-1 mb-6 bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-100 dark:border-orange-900/20">
               <h3 className="text-xs font-bold uppercase tracking-widest text-orange-600/70 mb-2 flex items-center gap-2">
                  <History className="w-3 h-3" />
-                 Unfinished Tasks from Yesterday
+                 {t("unfinished_tasks_header")}
               </h3>
               {previousDayPlan.tasks.filter(t => !t.completed).map(task => (
                 <div 
@@ -406,10 +408,10 @@ export default function DailyPlanPage() {
                         disabled
                         className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base p-0 h-auto font-serif w-full placeholder:text-muted-foreground/50 text-foreground/80 cursor-not-allowed"
                       />
-                      <span className="text-[10px] text-orange-500 font-medium italic mt-0.5">From yesterday</span>
+                      <span className="text-[10px] text-orange-500 font-medium italic mt-0.5">{t("from_yesterday")}</span>
                   </div>
                   <div className="text-[10px] text-orange-600/40 uppercase font-medium mt-1.5 px-2">
-                     Linked
+                     {t("linked")}
                   </div>
                 </div>
               ))}
@@ -451,7 +453,7 @@ export default function DailyPlanPage() {
               <Plus className="w-4 h-4 text-muted-foreground/30 group-focus-within:text-primary/50 transition-colors" />
               <Input 
                   className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base placeholder:text-muted-foreground/40 p-0 h-auto font-sans" 
-                  placeholder="New task..." 
+                  placeholder={t("new_task_placeholder")} 
                   onKeyDown={(e) => { 
                       if (e.key === 'Enter') { 
                           handleAddTask(e.currentTarget.value); 
@@ -466,8 +468,8 @@ export default function DailyPlanPage() {
         {/* EDITOR (Creative Thoughts / Notes) */}
         <section id="section-notes" className="space-y-4">
           <h2 className="font-serif text-xl font-medium border-b border-border/40 pb-2 flex items-center">
-            {type === 'year' ? 'Goals & Vision' : type === 'month' ? 'Reflection & Initiatives' : 'Notes & Ideas'}
-            <SectionTooltip text="Free-form space for reflection, ideas, and detailed planning." />
+            {type === 'year' ? t("goals_vision") : type === 'month' ? t("reflection_initiatives") : t("notes_ideas")}
+            <SectionTooltip text={t("tooltip_notes")} />
           </h2>
           
           <SectionPrompts type={type} />
@@ -475,7 +477,7 @@ export default function DailyPlanPage() {
           <MarkdownEditor 
             value={plan.notes || ''} 
             onChange={(val) => handleUpdateNotes(val)} 
-            placeholder="Start typing..."
+            placeholder={t("start_typing")}
           />
         </section>
         
@@ -485,8 +487,8 @@ export default function DailyPlanPage() {
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                        Habit Tracker
-                        <SectionTooltip text="Track up to 2 key habits to build consistency." />
+                        {t("habit_tracker")}
+                        <SectionTooltip text={t("tooltip_habits")} />
                     </h2>
                     {(principles.habitDefinitions?.length || 0) < 2 && (
                          <Dialog open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>

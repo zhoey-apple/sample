@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { format, startOfISOWeek, startOfMonth, startOfYear } from "date-fns";
 import { CheckCircle2, Circle, ArrowRight, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function OnboardingGuide() {
   const [open, setOpen] = useState(false);
@@ -13,6 +14,7 @@ export function OnboardingGuide() {
   const { data: plans } = getAllPlans();
   const [_, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const { t } = useI18n();
 
   // Check if first time user
   useEffect(() => {
@@ -100,9 +102,9 @@ export function OnboardingGuide() {
   const steps = [
     {
         id: 1,
-        title: "Foundation",
-        description: "Start by defining your Core Principles and Yearly Goals. These guide everything else.",
-        action: "Create Principles & Year Plan",
+        title: t("step_foundation"),
+        description: t("step_foundation_desc"),
+        action: t("step_foundation_action"),
         doAction: () => {
             setLocation("/principles");
             setOpen(false);
@@ -110,23 +112,23 @@ export function OnboardingGuide() {
     },
     {
         id: 2,
-        title: "Monthly Direction",
-        description: "Break down your yearly goals into actionable monthly initiatives.",
-        action: "Create Monthly Plan",
+        title: t("step_monthly"),
+        description: t("step_monthly_desc"),
+        action: t("step_monthly_action"),
         doAction: () => createPlan('month', monthDate)
     },
     {
         id: 3,
-        title: "Weekly Focus",
-        description: "Plan your week to align with your monthly direction.",
-        action: "Create Weekly Plan",
+        title: t("step_weekly"),
+        description: t("step_weekly_desc"),
+        action: t("step_weekly_action"),
         doAction: () => createPlan('week', weekDate)
     },
     {
         id: 4,
-        title: "Daily Execution",
-        description: "Execute on your tasks day by day, guided by your higher-level plans.",
-        action: "Create Daily Plan",
+        title: t("step_daily"),
+        description: t("step_daily_desc"),
+        action: t("step_daily_action"),
         doAction: () => createPlan('day', dayDate)
     }
   ];
@@ -144,9 +146,9 @@ export function OnboardingGuide() {
         <DialogContent className="sm:max-w-[600px] gap-0 p-0 overflow-hidden">
             <div className="p-6 pb-0">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-serif">Welcome to your Life Diary</DialogTitle>
+                    <DialogTitle className="text-2xl font-serif">{t("welcome_title")}</DialogTitle>
                     <DialogDescription className="text-base mt-2">
-                        This system is designed to align your daily actions with your life principles and long-term goals.
+                        {t("welcome_desc")}
                     </DialogDescription>
                 </DialogHeader>
             </div>
@@ -184,21 +186,21 @@ export function OnboardingGuide() {
 
             <DialogFooter className="bg-muted/10 p-4 px-6 flex justify-between items-center sm:justify-between border-t border-border/40">
                 <Button variant="ghost" onClick={handleComplete} className="text-muted-foreground text-xs hover:text-foreground">
-                    Don't show this again
+                    {t("dont_show_again")}
                 </Button>
                 <div className="flex gap-2">
                     {step > 1 && (
                         <Button variant="outline" size="sm" onClick={() => setStep(s => s - 1)}>
-                            Back
+                            {t("back")}
                         </Button>
                     )}
                     {step < 4 ? (
                         <Button variant="ghost" size="sm" onClick={() => setStep(s => s + 1)}>
-                            Next Step
+                            {t("next_step")}
                         </Button>
                     ) : (
                         <Button size="sm" onClick={handleComplete}>
-                            Finish Guide
+                            {t("finish_guide")}
                         </Button>
                     )}
                 </div>

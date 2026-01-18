@@ -4,11 +4,13 @@ import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export default function PrinciplesPage() {
   const { principles, loadingPrinciples, updatePrinciples } = usePlans();
   const [content, setContent] = useState("");
   const [isDirty, setIsDirty] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (principles) {
@@ -43,8 +45,8 @@ export default function PrinciplesPage() {
       <div className="max-w-3xl mx-auto space-y-8">
         <header className="flex items-center justify-between pb-6 border-b border-border">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-primary mb-2">Life Principles</h1>
-            <p className="text-muted-foreground">The foundation of all your plans. Review often.</p>
+            <h1 className="text-3xl font-serif font-bold text-primary mb-2">{t("principles_title")}</h1>
+            <p className="text-muted-foreground">{t("principles_subtitle")}</p>
           </div>
           <button 
             onClick={handleSave}
@@ -57,7 +59,7 @@ export default function PrinciplesPage() {
             `}
           >
             {updatePrinciples.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isDirty ? 'Save Changes' : 'Saved'}
+            {isDirty ? t("save_changes") : t("saved")}
           </button>
         </header>
 
@@ -66,7 +68,7 @@ export default function PrinciplesPage() {
             value={content}
             onChange={handleChange}
             className="w-full h-full min-h-[500px] resize-none border-none focus-visible:ring-0 p-0 text-lg leading-relaxed font-serif text-foreground/90 bg-transparent"
-            placeholder="# Write your principles here..."
+            placeholder={t("principles_placeholder")}
             data-testid="input-principles"
           />
         </Card>
