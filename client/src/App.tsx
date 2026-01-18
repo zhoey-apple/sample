@@ -56,6 +56,7 @@ function Router() {
 }
 
 import { OnboardingGuide } from "@/components/onboarding-guide";
+import { CoverSelection } from "@/components/cover-selection";
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
       <AuthProvider>
         <Router />
         <Toaster />
+        <CoverSelection />
         <OnboardingGuide />
       </AuthProvider>
     </QueryClientProvider>

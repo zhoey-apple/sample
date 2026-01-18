@@ -19,7 +19,12 @@ export function OnboardingGuide() {
      // Wait for data to load
      if (plans && principles !== undefined) {
          const hasCompletedOnboarding = localStorage.getItem("has-completed-onboarding");
+         const hasTheme = localStorage.getItem("diary-theme");
+         
          if (hasCompletedOnboarding === "true") return;
+         
+         // Don't show guide if theme hasn't been selected yet (let CoverSelection handle that first)
+         if (!hasTheme) return;
 
          const hasYearPlan = plans.some(p => p.type === 'year');
          const hasPrinciples = principles?.content && principles.content.length > 50; 
@@ -31,8 +36,22 @@ export function OnboardingGuide() {
      }
   }, [plans, principles]);
 
-  // Listen for manual open event
+  // Listen for manual open event and theme selection
   useEffect(() => {
+    const handleCheck = () => {
+        // Same logic as above, triggered after theme selection
+        const hasCompletedOnboarding = localStorage.getItem("has-completed-onboarding");
+        if (hasCompletedOnboarding === "true") return;
+        
+        if (plans) {
+             const hasYearPlan = plans.some(p => p.type === 'year');
+             const hasPrinciples = principles?.content && principles.content.length > 50; 
+             if (!hasYearPlan && !hasPrinciples) {
+                 setOpen(true);
+             }
+        }
+    };
+
     const handleManualOpen = () => {
         setOpen(true);
         // Determine sensible starting step based on existing data
@@ -49,9 +68,15 @@ export function OnboardingGuide() {
             setStep(1);
         }
     };
+    
     window.addEventListener("open-onboarding", handleManualOpen);
-    return () => window.removeEventListener("open-onboarding", handleManualOpen);
-  }, [plans]);
+    window.addEventListener("check-onboarding", handleCheck);
+    
+    return () => {
+        window.removeEventListener("open-onboarding", handleManualOpen);
+        window.removeEventListener("check-onboarding", handleCheck);
+    };
+  }, [plans, principles]);
 
   const handleComplete = () => {
       localStorage.setItem("has-completed-onboarding", "true");
