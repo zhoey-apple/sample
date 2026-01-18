@@ -249,21 +249,61 @@ export default function DailyPlanPage() {
       <div className="space-y-12 pb-20 fade-in duration-500">
         
         {/* HEADER */}
-        <header className="flex items-center justify-between border-b border-border/40 pb-6">
-          <Link href={`/${type}/${prevDate}`}>
-            <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
-              <ChevronLeft className="w-5 h-5" />
-            </a>
-          </Link>
-          <div className="text-center">
-            <h1 className="text-3xl font-serif font-bold text-foreground mb-1 tracking-tight">{title}</h1>
-            <p className="text-muted-foreground text-xs uppercase tracking-widest font-medium opacity-70">{subtitle}</p>
+        <header className="flex flex-col gap-6 border-b border-border/40 pb-6">
+          
+          {/* Timeline Navigation */}
+          {type === 'day' ? (
+             <div className="flex items-center justify-between text-sm font-medium text-muted-foreground w-full max-w-md mx-auto relative">
+                {/* Connecting Line */}
+                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-border/50 -z-10" />
+
+                <Link href={`/day/${prevDate}`}>
+                    <a className="flex flex-col items-center gap-1 bg-background px-2 z-10 group transition-all hover:text-primary hover:scale-105">
+                        <span className="text-[10px] uppercase tracking-widest opacity-60">Yesterday</span>
+                        <div className="flex items-center gap-1 group-hover:-translate-x-1 transition-transform">
+                            <ChevronLeft className="w-3 h-3" />
+                            <span className="font-serif">{format(parseISO(prevDate), "MMM d")}</span>
+                        </div>
+                    </a>
+                </Link>
+
+                <div className="flex flex-col items-center gap-1 bg-background px-4 z-10 scale-110 text-primary border border-border/50 rounded-full py-1 shadow-sm">
+                    <span className="text-[10px] uppercase tracking-widest font-bold">Today</span>
+                </div>
+
+                <Link href={`/day/${nextDate}`}>
+                    <a className="flex flex-col items-center gap-1 bg-background px-2 z-10 group transition-all hover:text-primary hover:scale-105">
+                        <span className="text-[10px] uppercase tracking-widest opacity-60">Tomorrow</span>
+                        <div className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            <span className="font-serif">{format(parseISO(nextDate), "MMM d")}</span>
+                            <ChevronRight className="w-3 h-3" />
+                        </div>
+                    </a>
+                </Link>
+             </div>
+          ) : (
+             // Fallback for non-day views
+             <div className="flex items-center justify-between">
+                <Link href={`/${type}/${prevDate}`}>
+                    <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
+                    <ChevronLeft className="w-5 h-5" />
+                    </a>
+                </Link>
+                <div className="text-center">
+                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-medium opacity-70 mb-1">{subtitle}</p>
+                </div>
+                <Link href={`/${type}/${nextDate}`}>
+                    <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
+                    <ChevronRight className="w-5 h-5" />
+                    </a>
+                </Link>
+             </div>
+          )}
+
+          <div className="text-center space-y-1">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground tracking-tight">{title}</h1>
+            <p className="text-muted-foreground font-serif italic text-lg opacity-80">{format(dateObj, "EEEE")}</p>
           </div>
-          <Link href={`/${type}/${nextDate}`}>
-            <a className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-full">
-              <ChevronRight className="w-5 h-5" />
-            </a>
-          </Link>
         </header>
 
         {/* EMBEDDED CONTEXT (Top Section) */}
@@ -360,11 +400,14 @@ export default function DailyPlanPage() {
                   <button onClick={() => handleTogglePreviousDayTask(task.id)} className="mt-1.5 text-orange-600/60 hover:text-orange-600 transition-colors flex-shrink-0">
                     <Circle className="w-4 h-4" />
                   </button>
-                  <Input
-                    value={task.text}
-                    disabled
-                    className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base p-0 h-auto font-serif flex-1 min-w-0 placeholder:text-muted-foreground/50 text-foreground/80 cursor-not-allowed"
-                  />
+                  <div className="flex-1 min-w-0 flex flex-col">
+                      <Input
+                        value={task.text}
+                        disabled
+                        className="border-none shadow-none focus-visible:ring-0 bg-transparent text-base p-0 h-auto font-serif w-full placeholder:text-muted-foreground/50 text-foreground/80 cursor-not-allowed"
+                      />
+                      <span className="text-[10px] text-orange-500 font-medium italic mt-0.5">From yesterday</span>
+                  </div>
                   <div className="text-[10px] text-orange-600/40 uppercase font-medium mt-1.5 px-2">
                      Linked
                   </div>
